@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1541730580611.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2877799496",
+    "id" : "8A85B9CA",
+    "lastKnownWriteTime" : 1510859236,
+    "last_content_update" : 1510859236,
+    "path" : "C:/Users/George/Desktop/2017 BBG/GobyEggs/Scripts/surveydata.R",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "249,13",
+        "scrollLine" : "0"
+    },
+    "relative_order" : 11,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

@@ -1,0 +1,29 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1541734972395.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "773150E4",
+    "lastKnownWriteTime" : 2698330647410602800,
+    "last_content_update" : 1541734972395,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "4ACBF1B1",
+        "caption" : "gob.sub",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=gob.sub&cache_key=4ACBF1B1",
+        "displayedObservations" : 273,
+        "environment" : "",
+        "object" : "gob.sub",
+        "preview" : 0,
+        "totalObservations" : 273,
+        "variables" : 12
+    },
+    "relative_order" : 7,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

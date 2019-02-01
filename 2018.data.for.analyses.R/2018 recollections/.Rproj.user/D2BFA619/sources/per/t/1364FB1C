@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1541450197740.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2247137777",
+    "id" : "1364FB1C",
+    "lastKnownWriteTime" : 1509827570,
+    "last_content_update" : 1509827570,
+    "path" : "C:/Users/George/Desktop/2017 BBG/GobyEggs/Scripts/eggcounts.R",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "325,0",
+        "scrollLine" : "0"
+    },
+    "relative_order" : 6,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

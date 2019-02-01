@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1539199096620.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3357304608",
+    "id" : "D8F14965",
+    "lastKnownWriteTime" : 1541210373,
+    "last_content_update" : 1541210373785,
+    "path" : "C:/Users/George/Desktop/2018 summer/2018 Goby/2018 data for analyses, R/2018 egg counts/Scripts/eggs.by.risk.R",
+    "project_path" : "Scripts/eggs.by.risk.R",
+    "properties" : {
+        "cursorPosition" : "52,30",
+        "scrollLine" : "0",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

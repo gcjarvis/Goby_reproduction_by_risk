@@ -1,0 +1,336 @@
+##
+#practice with Nyssa
+#
+
+#clear workspace
+rm(list=ls())
+
+library(lme4)
+#install.packages("lmerTest")
+library(lmerTest)
+
+#need to library these two packages to run my negative binomial dist. 
+library(MASS)
+library(foreign)
+
+#load data
+#gobydata<-read.csv("Data/egg_counts_repeated_measures_format_clean.csv")
+#want to use new data
+
+#gobydata<-read.csv("Data/egg_counts_raw_data_10_29_17.csv")
+#subsetting the data to see what it looks like when I break it down by trial
+#gobydata<-read.csv("Data/egg_counts_raw_data_10_29_17.csv")
+gobydata<-read.csv("Data/egg_counts_raw_data_day4_6_or_5_gravids_11_1_17.csv")
+#gobydata<-gobydata[gobydata$Day=="Day 1",]
+#gobydata<-gobydata[gobydata$Trial!="2",]
+
+#setting up mixed effects model, adding one random effect at a time, then 
+#comparing AIC vlaues for each model to see which factors are necessary
+mod1<-lmer(Total_Eggs~Treatment+(1|Position),data=gobydata)
+
+#anova, gives p values for main effects
+anova(mod1)
+
+#summary, shows you effect sizes, and tells if those effect sizes are sig. 
+#also tells you your variance for your rand. effects
+summary(mod1)
+
+#what random effects actually are, based on position
+ranef(mod1)
+
+#pull out fixed effects only
+fixef(mod1)
+
+#add trial as another random effect, assuming that position 
+#and time are not related to each other, running orthogonal
+mod2<-lmer(Total_Eggs~Treatment+(1|Position)+(1|Trial),data=gobydata)
+fixef (mod2)
+ranef (mod2)
+
+#mod2a<-aov(Total_Eggs~Treatment*Position*Trial,data=gobydata)
+#anova(mod2a)
+
+#mod2b<-glm(Total_Eggs~Treatment+Position+Trial,data=gobydata, family=poisson)
+#anova(mod2b)
+
+anova(mod2)
+summary(mod2)
+mod2c<-lm(Total_Eggs~Treatment+Position+Trial,data=gobydata)
+
+#think about adding average size of females into the model as a covariate
+
+#now we want to add repeated measure of day into the model
+mod3<-lmer(Total_Eggs~Treatment+(1|Position)+(1|Trial/Day),data=gobydata)
+anova(mod3)
+summary(mod3)
+
+mod3.avg.grav<-lmer(Eggs_grav_female~Treatment+(1|Position)+(1|Trial/Day),data=gobydata)
+anova(mod3.avg.grav)
+summary(mod3.avg.grav)
+
+mod.avg.poiss<-glmer(Eggs_grav_female~Treatment+(1|Position)+(1|Trial/Day), family=poisson,data=gobydata)
+anova(mod.avg.poiss)
+summary(mod.avg.poiss)
+hist(resid(mod5d))
+qqnorm(resid(mod5d))
+qqline(resid(mod5d))
+
+ranef(mod.avg.poiss)
+
+ranef(mod3)
+
+#now we want to see how the models compare to each other
+#we want to see if they are significant'y different from each other
+
+anova(mod1,mod2,mod3)
+
+#shows that the best model is model 3, including pos., trial, and day as random factors
+
+#testing for interactive effects of position
+#might go back and rerun this when I have trial 3 data
+mod4<-lmer(Total_Eggs~Treatment*Position+(1|Trial/Day),data=gobydata)
+#anova(mod4)
+#no interactive effect of treatment*position
+#don't think it's the best model, but just to be sure, lets compare all models
+ranef(mod4)
+
+mod5a<-lm(Total_Eggs~Treatment*Position*Trial,data=gobydata)
+anova(mod5a)
+
+mod5c<-lm(Eggs_grav_female_whole_fish~Treatment,data=gobydata)
+anova(mod5c)
+
+mod5d<-lm(Eggs_grav_female~Treatment, data=gobydata)
+anova(mod5d)
+
+
+
+mod5e<-glmer(Total_Eggs~Treatment,family=poisson, data=gobydata)
+anova(mod5e)
+
+hist(resid(mod5e))
+
+anova(mod1,mod2,mod3,mod4)
+
+library(agricolae)
+HSD.test(mod5d,"Treatment", group=TRUE,console=TRUE)
+
+#shows that mod3 and mod4 have the same AIC value, but that mod3 is 
+#sig. different, think I should go with that one?
+
+##have to incorporate the number of fishes that I recollected
+
+#check assumptions of normality and equal variance
+hist(gobydata$Total_Eggs)
+
+#look for residuals of the model to test for normality
+#going to do a qqnorm plot
+qqnorm(resid(mod3))
+qqline(resid(mod3))
+hist(resid(mod3))
+
+#going to log x +1 transformation
+gobydata$log.eggs<-log(gobydata$Total_Eggs + 1)
+#rerun with log-transformed eggs
+gobylogeggs<-lmer(log.eggs~Treatment+(1|Position)+(1|Trial/Day),data=gobydata)
+qqnorm(resid(gobylogeggs))
+qqline(resid(gobylogeggs))
+hist(resid(gobylogeggs))
+
+#transformation made it worse
+
+shapiro.test(resid(mod3))
+
+#sig. p value here means that the residuals are not normally distributed
+
+#going to try and fit this to a Poisson distribution, which is
+#used for count data that are positive integers 
+#assumes that mean and variance are equal
+
+#going to use the "glmer" function, not the lmer
+
+mod.poiss<-glmer(Total_Eggs~Treatment+(1|Position)+(1|Trial/Day), family=poisson,data=gobydata)
+ranef(mod.poiss)
+
+anova(mod.poiss)
+summary(mod.poiss)
+qqnorm(resid(mod.poiss))
+qqline(resid(mod.poiss))
+#we're going to save the following plot as a .pdf
+pdf("Output/poiss.hist.pdf",width=6,height=6)
+hist(resid(mod.poiss))
+dev.off()
+
+#want to compare this model to the normal distribution
+
+anova(mod3,mod.poiss,mod1,mod2,mod4)
+
+#poisson distribution is a much better fit than the normal distribution
+#mod.poiss has a lower aic model
+#how do I tell which one is which? It seems like mod3 is a better fit now,
+#not the fit with the Poisson distribution
+
+#want to compare mean and variance of each treatment and compare them
+#aggregate and ddply
+#ddply is good when you have a lot of different things that you're trying to do at once
+#aggregate is good for one thing at a time
+
+goby.mean<-aggregate(Total_Eggs~Treatment+Position+Trial,FUN = function(x) c(mn=mean(x),vr=var(x)),data=gobydata)
+plot(goby.mean$Total_Eggs[,1],goby.mean$Total_Eggs[,2])
+
+#negative binomial is an "over-expressed" Poisson, which you can use when
+#your mean and variance are not equal
+
+#need to add some packages before we can start
+#install.packages(foreign)
+
+#summary(m1 <- glm.nb(daysabs ~ math + prog, data = dat))
+#summary(modn.binom<-glm.nb(Total_Eggs~Treatment+(1|Position)+(1|Trial/Day),data=gobydata, interval = log(th) + c(-3, 3),
+#tol = 5e-5, verbose = FALSE, nb.control = NULL,
+#initCtrl = list(limit = 20, eps = 2*tol, trace = verbose,
+                #theta = NULL)))
+#summary(modn.binom<-glm.nb(Total_Eggs~Treatment+Position+Trial,data=gobydata))
+
+#summary(modn.binom<-glm.nb(Total_Eggs~Treatment+(1|Position)+(1|Trial/Day),data=gobydata, verbose = TRUE))
+
+#doesn't seem to like my model as it is, it likes fixed effects better
+#than random effects, as it does not pick up on the "|" or "/" factors 
+#(the random and nested factor, respectively)
+
+#how to change labels in the data frame without having to make changes to the raw data
+#n<-which(gobydata$Trial=="1")
+#n
+#gobydata$Trial<-as.character(gobydata$Trial)
+#gobydata$Trial[n]<-"1"
+gobydata$Trial<-as.factor(gobydata$Trial)
+gobydata$Position<-as.factor(gobydata$Position)
+
+#figure out biomass data, first at end of experiment (recollections)
+#do first with data just at the end, and then the average biomass between the initial vs. final biomass
+
+#then have to go back and use gamma distribution if data isn't normal, because now I have continuous data, not count data
+
+##---------------want to try out my ggplot code again---------------
+
+#using ggplot to show multiple "facets" of data in the same figure
+#setting up data for ggplot
+#tcbri<-(with(gobydata, aggregate((Total_Eggs), list(Treatment=Treatment, Position=Position, Trial=Trial), mean)))
+#now apply the se function to the 4th column [,4]
+#tcbri$se<-with(gobydata, aggregate((Total_Eggs), list(Treatment=Treatment, Position=Position, Trial=Trial), function(x) sd(x)/length(x)))[,4]
+#tcbri
+
+#this is the new output using eggs per total number of total females throughout trials
+#tcbri<-(with(gobydata, aggregate((Eggs_per_total_fem_whole_fish), list(Treatment=Treatment, Position=Position, Trial=Trial), mean)))
+#now apply the se function to the 4th column [,4]
+#tcbri$se<-with(gobydata, aggregate((Eggs_per_total_fem_whole_fish), list(Treatment=Treatment, Position=Position, Trial=Trial), function(x) sd(x)/length(x)))[,4]
+#tcbri
+
+#this is the new output using eggs per total number of gravid females throughout trials
+tcbri<-(with(gobydata, aggregate((Eggs_grav_female_whole_fish), list(Treatment=Treatment, Position=Position, Trial=Trial), mean)))
+#now apply the se function to the 4th column [,4]
+tcbri$se<-with(gobydata, aggregate((Eggs_grav_female_whole_fish), list(Treatment=Treatment, Position=Position, Trial=Trial), function(x) sd(x)/length(x)))[,4]
+tcbri
+
+#this is the new output using eggs per total number of gravid females throughout trials
+tcbri<-(with(gobydata, aggregate((Eggs_grav_female_whole_fish), list(Treatment=Treatment, Position=Position), mean)))
+#now apply the se function to the 4th column [,4]
+tcbri$se<-with(gobydata, aggregate((Eggs_grav_female_whole_fish), list(Treatment=Treatment, Position=Position), function(x) sd(x)/length(x)))[,3]
+tcbri
+
+#this is the new output using eggs per total number of gravid females throughout trials
+tcbri<-(with(gobydata, aggregate((Eggs_grav_female_whole_fish), list(Treatment=Treatment), mean)))
+#now apply the se function to the 4th column [,4]
+tcbri$se<-with(gobydata, aggregate((Eggs_grav_female_whole_fish), list(Treatment=Treatment), function(x) sd(x)/length(x)))[,2]
+tcbri
+
+#this is the new output using eggs per total number of gravid females throughout trials
+tcbri<-(with(gobydata, aggregate((Eggs_grav_female), list(Treatment=Treatment), mean)))
+#now apply the se function to the 4th column [,4]
+tcbri$se<-with(gobydata, aggregate((Eggs_grav_female), list(Treatment=Treatment), function(x) sd(x)/length(x)))[,2]
+tcbri
+
+#ggplot with facet_grid function
+#can force ggplot to change the x-axis label orders, just have to put 
+#"scale_x_discrete..." code before the "facet code"
+library(ggplot2)
+pdf("Output/3.panal.figure.all.data.pdf",width=10,height=6)
+doom<- ggplot(tcbri, aes(x=Treatment, y=x, fill=Position)) +
+  geom_bar(stat="identity", colour="black",position="dodge")+ 
+  scale_x_discrete(limits=c("Low","Medium","High"))+
+  scale_fill_discrete(limits=c("Front","Middle","Back"))+
+  facet_grid(~day) + theme_bw()  
+doom + geom_errorbar(aes(ymin=x-se, ymax=x+se), size=0.5,   
+                     width=.25,position=position_dodge(.9)) +
+  facet_grid(~Trial) + labs(x="Risk Treatment", y="Average Reproduction (# eggs per treatment)")
+dev.off()
+
+doom<- ggplot(tcbri, aes(x=Treatment, y=x, fill=Position)) +
+  geom_bar(stat="identity", colour="black",position="dodge")+ 
+  scale_x_discrete(limits=c("Low","Medium","High"))+
+  scale_fill_discrete(limits=c("Front","Middle","Back"))+
+  #facet_grid(~day) + theme_bw()  
+doom + geom_errorbar(aes(ymin=x-se, ymax=x+se), size=0.5,   
+                     width=.25,position=position_dodge(.9)) +
+  facet_grid(~Trial) + labs(x="Risk Treatment", y="Average Reproduction (# eggs per treatment)")
+
+doom<- ggplot(tcbri, aes(x=Treatment, y=x)) +
+  geom_bar(stat="identity", colour="black",position="dodge")+ 
+  scale_x_discrete(limits=c("Low","Medium","High"))+
+  labs(x="Risk Treatment", y="Average Reproduction (# eggs per treatment)")
+  doom + geom_errorbar(aes(ymin=x-se, ymax=x+se), size=0.5,   
+                       width=.25,position=position_dodge(.9))
+
+#not a fantastic figure. Need to figure out how to reorder the position 
+#columns within my figure so that it goes, Front, Middle, Back
+#must be a way to do it
+
+#we're going to save the following plot as a .pdf
+#pdf("Output/poiss.hist.pdf",width=6,height=6)
+#hist(resid(mod.poiss))
+
+
+#-------------10/30/17-------------
+#going to see what data looks like only using D4 data
+
+#how to get a subset of the data from Casey:
+#d4.eggs.only<-gobydata[gobydata$Day=="Day 1",]
+# this line of code takes only the data from the first day of sampling
+#d4.eggs.only
+
+#how to get a subset of the data from Casey:
+#t1.t3.eggs.only<-gobydata[gobydata$Trial!="2",]
+# this line of code takes only the data from the first day of sampling
+#t1.t3.eggs.only
+
+#eggamod<-aov(Total_Eggs~Treatment*Position, data = egg_onlytrial2)
+#anova(eggamod)
+#no sig differences here, and no sig differences between position
+
+#----------10/31/17
+#I have to go back into excel and recalculate averages, bc, some were done incorrectly
+#the count function in excel for the total females is off for some reefs
+#I don't expect it to make too much of a difference, but it could
+#then...
+#the next step is to go through model selection and see what the normality looks like
+
+#----------11/1/17
+#trying out new model with female lengths (all females, and then just gravids)
+
+mod5<-lmer(Eggs_grav_female_whole_fish~Treatment+Avg_grav_female_whole_fish+(1|Position)+(1|Trial/Day),data=gobydata)
+anova(mod5)
+summary(mod5)
+
+mod5.gamma<-glmer(Eggs_grav_female_whole_fish~Treatment+Avg_grav_female_whole_fish+(1|Position)+(1|Trial/Day), family=Gamma(link="inverse"), data=gobydata)
+anova(mod5.gamma)
+summary(mod5.gamma)
+#this isn't working either, because I have some 0 values
+#I read online that I could make the 0 values barely positive, but that would not be representative of the data.
+
+fixef(mod5)
+ranef(mod5)
+
+#now want to compare the model
+
+anova(mod1,mod2,mod3,mod4,mod.poiss,mod5)
+
+

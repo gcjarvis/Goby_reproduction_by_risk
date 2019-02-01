@@ -1,0 +1,107 @@
+﻿Details
+Series: Temp, °F
+	Devices
+		Device Info
+			• Product: HOBO UA-001-08 Pendant Temp
+			• Serial Number: 20181751
+			• Version Number: 1.10
+			• Manufacturer: Onset Computer Corp.
+			• Device Memory: 8192
+			• Header Created: 09/24/13 08:53:21 AM GMT-07:00
+	Deployment Info
+		• Full Series Name: Temperature, °F
+		• Launch Name: 20181751
+		• Deployment Number: 2
+		• Launch Time: 06/05/18 08:12:07 AM GMT-07:00
+		• Logging Interval: 00 Hr 30 Min 00 Sec
+		• Launch GMT Offset: -7 Hr 0 Min
+		• Battery at Launch: 2.99 Volts
+		• Launching Program: HOBOware Pro-3.7.14_0315_0933_Windows
+	Series Statistics
+		• Samples: 1,142
+		• Max: 69.622
+		• Min: 58.476
+		• Avg: 65.253
+		• Std Dev (σ): 1.304
+		• First Sample Time: 06/05/18 01:30:00 PM GMT-07:00
+		• Last Sample Time: 06/29/18 08:00:00 AM GMT-07:00
+Event Type: Coupler Attached
+	Devices
+		Device Info
+			• Product: HOBO UA-001-08 Pendant Temp
+			• Serial Number: 20181751
+			• Version Number: 1.10
+			• Manufacturer: Onset Computer Corp.
+			• Device Memory: 8192
+			• Header Created: 09/24/13 08:53:21 AM GMT-07:00
+	Deployment Info
+		• Full Series Name: Coupler Attached
+		• Launch Name: 20181751
+		• Deployment Number: 2
+		• Launch Time: 06/05/18 08:12:07 AM GMT-07:00
+		• Launch GMT Offset: -7 Hr 0 Min
+		• Battery at Launch: 2.99 Volts
+	Series Statistics
+		• Samples: 1
+		• First Sample Time: 06/29/18 08:09:33 AM GMT-07:00
+		• Last Sample Time: 06/29/18 08:09:33 AM GMT-07:00
+Event Type: Host Connected
+	Devices
+		Device Info
+			• Product: HOBO UA-001-08 Pendant Temp
+			• Serial Number: 20181751
+			• Version Number: 1.10
+			• Manufacturer: Onset Computer Corp.
+			• Device Memory: 8192
+			• Header Created: 09/24/13 08:53:21 AM GMT-07:00
+	Deployment Info
+		• Full Series Name: Host Connected
+		• Launch Name: 20181751
+		• Deployment Number: 2
+		• Launch Time: 06/05/18 08:12:07 AM GMT-07:00
+		• Launch GMT Offset: -7 Hr 0 Min
+		• Battery at Launch: 2.99 Volts
+	Series Statistics
+		• Samples: 1
+		• First Sample Time: 06/29/18 08:09:43 AM GMT-07:00
+		• Last Sample Time: 06/29/18 08:09:43 AM GMT-07:00
+Event Type: Stopped
+	Devices
+		Device Info
+			• Product: HOBO UA-001-08 Pendant Temp
+			• Serial Number: 20181751
+			• Version Number: 1.10
+			• Manufacturer: Onset Computer Corp.
+			• Device Memory: 8192
+			• Header Created: 09/24/13 08:53:21 AM GMT-07:00
+	Deployment Info
+		• Full Series Name: Stopped
+		• Launch Name: 20181751
+		• Deployment Number: 2
+		• Launch Time: 06/05/18 08:12:07 AM GMT-07:00
+		• Launch GMT Offset: -7 Hr 0 Min
+		• Battery at Launch: 2.99 Volts
+	Series Statistics
+		• Samples: 1
+		• First Sample Time: 06/29/18 08:09:49 AM GMT-07:00
+		• Last Sample Time: 06/29/18 08:09:49 AM GMT-07:00
+Event Type: End Of File
+	Devices
+		Device Info
+			• Product: HOBO UA-001-08 Pendant Temp
+			• Serial Number: 20181751
+			• Version Number: 1.10
+			• Manufacturer: Onset Computer Corp.
+			• Device Memory: 8192
+			• Header Created: 09/24/13 08:53:21 AM GMT-07:00
+	Deployment Info
+		• Full Series Name: End Of File
+		• Launch Name: 20181751
+		• Deployment Number: 2
+		• Launch Time: 06/05/18 08:12:07 AM GMT-07:00
+		• Launch GMT Offset: -7 Hr 0 Min
+		• Battery at Launch: 2.99 Volts
+	Series Statistics
+		• Samples: 1
+		• First Sample Time: 06/29/18 08:09:49 AM GMT-07:00
+		• Last Sample Time: 06/29/18 08:09:49 AM GMT-07:00
