@@ -1,0 +1,8 @@
+cd
+mkdir folder name
+ls
+mv oldname newfolder/name
+git pull
+git add name of folder or file you want to add *.csv will add all of that file type in folder
+git commit -a -m "commit message"
+git push
