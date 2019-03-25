@@ -10,7 +10,7 @@ library(lmerTest)
 library(MASS)
 library(ggplot2)
 library(extrafont)
-library(ggplot)
+library(ggplot2)
 
 #bringing in dataset
 gobydata<-read.csv("Data/egg_counts_raw_data_11_4_17.csv")

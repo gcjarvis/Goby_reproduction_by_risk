@@ -12,7 +12,7 @@ library(car)
 library(dplyr)
 library(ggplot2)
 library(extrafont)
-library(ggplot)
+library(ggplot2)
 library(plyr)
 
 
@@ -29,7 +29,7 @@ reco.fem<-reco[reco$sex=="female", c("trial", "sex", "reef", "treatment", "final
 View(reco.fem)
 
 
-bargraph.CI(x.factor = treatment, response = final.proportion, group=sex, legend=TRUE, main="recollections by sex", data = reco)
+bargraph.CI(x.factor = treatment, response = total.recollection, group=Sex, legend=TRUE, main="recollections by sex, trial 4",x.leg = 10, data = reco)
 
 #model selection
 reco1<-lm(final.proportion~treatment, data=reco)

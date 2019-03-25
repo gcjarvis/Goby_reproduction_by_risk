@@ -24,7 +24,7 @@ library(ggplot2)
 gob.sub<-read.csv("Data/List of nests to count.1.10.19.csv")
 gob.sub$Week<-as.factor(gob.sub$Week)
 gob.sub$Treatment<-ordered(gob.sub$Treatment,levels=c("Low","Medium","High","Control"))
-#density<-read.csv("C:\\Users\\George\\Desktop\\2018 summer\\2018 Goby\\2018 data for analyses, R\\2018 densities\\Data//density.1.14.19.csv")
+density<-read.csv("C:\\Users\\George\\Desktop\\2018 summer\\2018 Goby\\2018 data for analyses, R\\2018 densities\\Data//density.1.14.19.csv")
 #../goes up a level, instead of having to force R to go to a separate folder
 density$Day<-as.factor(density$Day)
 

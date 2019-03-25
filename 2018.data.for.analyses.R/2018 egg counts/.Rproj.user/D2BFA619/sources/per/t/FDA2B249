@@ -5,17 +5,17 @@
     "dirty" : false,
     "encoding" : "UTF-8",
     "folds" : "",
-    "hash" : "879744782",
+    "hash" : "2410196491",
     "id" : "FDA2B249",
-    "lastKnownWriteTime" : 1510872779,
-    "last_content_update" : 1510872779,
+    "lastKnownWriteTime" : 1550961121,
+    "last_content_update" : 1550961121,
     "path" : "C:/Users/George/Desktop/2017 BBG/GobyEggs/Scripts/figures.R",
     "project_path" : null,
     "properties" : {
-        "cursorPosition" : "153,0",
+        "cursorPosition" : "15,0",
         "scrollLine" : "0"
     },
-    "relative_order" : 9,
+    "relative_order" : 17,
     "source_on_save" : false,
     "source_window" : "",
     "type" : "r_source"

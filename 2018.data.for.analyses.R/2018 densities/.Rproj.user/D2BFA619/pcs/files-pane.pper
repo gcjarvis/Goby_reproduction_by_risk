@@ -1,6 +1,10 @@
 {
-    "path" : "C:/Users/George/Desktop/2018 summer/2018 Goby/2018 data for analyses, R/2018 densities/Data",
+    "path" : "C:/Users/George/Desktop/2018 summer/2018 Goby/Goby_reproduction_by_risk/2018.data.for.analyses.R/2018 densities/Data",
     "sortOrder" : [
+        {
+            "ascending" : false,
+            "columnIndex" : 4
+        },
         {
             "ascending" : true,
             "columnIndex" : 2
