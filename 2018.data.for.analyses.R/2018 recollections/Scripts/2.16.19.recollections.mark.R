@@ -25,6 +25,7 @@ getwd()
 #importing raw data
 #tried to make the .csv file not contain any NA's 
 reco.raw<-read.csv("Data/Recollections.all.trials.2.23.19.csv")
+View(reco.raw)
 #View(reco.raw)
 #reco.raw<- reco.raw[complete.cases(reco.raw), ]
 #reco.raw$growth<-as.integer(reco.raw$growth)

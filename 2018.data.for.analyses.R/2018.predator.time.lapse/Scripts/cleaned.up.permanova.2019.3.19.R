@@ -51,5 +51,5 @@ d3<-d3[!is.na(d3$Score.zero),]
 
 #figuring out how to get rid of the control
 
-permanovamodel1<-adonis(Score.zero~Treatment, data = d2, permutations = 999, method="euclidean", by= "terms")
+permanovamodel1<-adonis(Score.zero~Treatment, data = d3, permutations = 100, method="euclidean", by= "terms")
 permanovamodel1

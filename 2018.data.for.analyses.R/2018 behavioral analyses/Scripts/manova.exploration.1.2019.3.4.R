@@ -39,11 +39,15 @@ library(effects)#adjusted means
 library(jmv)
 
 #2019.3.12 data with 2017 densities:
-behave<-read.csv("Data/behavior.data.2019.3.14.csv") #doesn't include unnecessary NA's
+behave<-read.csv("Data/behavior.data.2019.4.4.csv") #doesn't include unnecessary NA's
 #behave<-read.csv("Data/behavior.data.2019.3.12.csv") #includes data on gravidity, and tags of chaser/chasee
 #data read in for packet of analyses: behave<-read.csv("Data/behavior.data.3.4.19.added.zeros.for.blanks.bites.csv")
 #ordering treatments for better graphical visualization
-#behave$Treatment<-ordered(behave$Treatment,levels=c("Low","Medium","High","Control"))
+behave$Treatment<-ordered(behave$Treatment,levels=c("Low","Medium","High"))
+
+#making a new variable for all courtship interactions
+behave$courtship<-behave$num.times.chased+behave$num.times.chaser
+View(behave)
 
 #subsetting data, only 2017
 behave.2017<-behave[behave$Trial<4, ]
@@ -52,6 +56,9 @@ behave.2017<-behave[behave$Trial<4, ]
 #                                        "chased.by.size.tag","num.times.chaser","chaser.of.size.tag","area.used.cm","Distance.moved.review.this.column","corrected.distance.moved")]
 #2018 data, only trials 4 and 5
 behave.2018.t4.5<-behave[c((behave$Trial>3) & (behave$Trial<6)), ]
+#Grade3orAboveData<-subset(StudentData, !is.na(Grade))
+#behave.2018.t4.5<-subset(behave.2018.t4.5, Treatment!="Control")
+#behave.2018.t4.5<-behave.2018.t4.5[behave.2018.t4.t5$Treatment!="Control"]
 
 #behave.2018.t4.5<-behave[c((behave$Trial>3) & (behave$Trial<6)), c("Year","Trial", "Reef", "Week","Days.after.deployment","Observer","Density","Goby.ID", "Treatment", "Density","Gravidity","Nearest.TOL","Starting.location",
 #                                         "Starting.position","Total.time.exposed","proportion.exposed","Total.time.hidden","proportion.hidden","num.movement.swims","num.bites","num.times.chased",
@@ -72,6 +79,22 @@ View(behave)
 #complete cases only
 behave<-behave[complete.cases(behave),]
 
+# proportion of data that are ==, >, <, a certain value
+plot(factor(courtship==0)~Treatment, data=behave) #equal proportions of zeros
+# among treatments, but not sure if number of courtship moves differed among treatments
+plot(factor(courtship>0)~Treatment, data=behave)
+
+
+boxplot(courtship~Treatment, data=behave)#
+
+#quick plots for each behavior
+bargraph.CI(x.factor = Treatment, response = courtship, main="courtship", xlab="Treatment", ylab="Proportion of time exposed (mean +/- se)", data = behave)
+#no diff in courtship (times chased or times chaser)
+bargraph.CI(x.factor = Treatment, response = num.bites, main="foraging", xlab="Treatment", ylab="Proportion of time exposed (mean +/- se)", data = behave)
+#no diff in foraging, but seems like there might be most foraging in high-risk trt
+# which makes sense that they might need to forage at a higher rate during the short time that
+# they are exposed
+bargraph.CI(x.factor = Treatment, response = proportion.exposed, main="exposure", xlab="Treatment", ylab="Proportion of time exposed (mean +/- se)", data = behave)
 
 #differences in behavior among treatments?
 mod1<-manova(cbind(Total.time.exposed,num.movement.swims,num.bites,
@@ -176,7 +199,7 @@ describeBy(behave,behave$Treatment)
 
 #now want to see if adjusted means for each behavior differ among treatments
 
-#calsulate adjusted means with aov() function and effect() function
+#calculate adjusted means with aov() function and effect() function
 #from "effect" package
 #have to go through and calculte adjusted means for each factor
 factor(behave$Treatment)
@@ -244,6 +267,7 @@ summary(adjmean.dist$se)
 library(jmv)
 #mancova(data=behave, deps=c('Total.time.exposed','num.movement.swims','num.bites',
 #                            'Distance.moved.review.this.column'),factors='Treatment',covs = 'Density')
+
 
 #2017
 #NOTE: I didn't record densities during my 2017 observations
