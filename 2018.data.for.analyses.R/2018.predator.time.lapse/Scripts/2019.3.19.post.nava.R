@@ -6,7 +6,7 @@
 #objectives:
 # 1. determine effectiveness of caging treatments based on average position scores of predators
 # 2. determine makeup of predator assemblages
-# 3. determine if there is any difference in the number of fish seen voer time
+# 3. determine if there is any difference in the number of fish seen over time
 #-- this will help me figure out if preds. were afraid of my presence immediately after
 #-- deploying the camera
 
