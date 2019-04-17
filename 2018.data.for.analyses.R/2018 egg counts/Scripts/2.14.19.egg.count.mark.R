@@ -235,7 +235,7 @@ df$log<-log(df$Egg.count+1)#...no
 
 ##########A) Unadjusted egg counts by treatment by week#############
 #2017.t1.2.3 analyses
-mod1<-lm(Egg.count~Treatment+Density,data=df)#not normal
+mod1<-lm(Egg.count~Treatment*Density,data=df)#not normal
 #coef(summary(mod1))[,4]
 hist(resid(mod1))
 qqnorm(resid(mod1))
