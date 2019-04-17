@@ -7,6 +7,12 @@
 # 2/14/19                            #
 ######################################
 
+#note: if you're having trouble with packages, go to this file path
+# C:\Users\George\Documents\R\win-library\3.5
+# then delete the folder for the package that you're struggling with
+# then reinstall the packages
+#   you may have to do this for the dependencies of packages as well
+
 rm(list=ls())
 
 library(sciplot)
@@ -15,6 +21,10 @@ library(car)
 library(lmerTest)
 library(dplyr)
 library(ggplot2)
+library(MASS)
+library(nlme)
+library(pwr)
+library(HH)#for ancova and plots
 
 #A. load data (egg counts and densities combined into one for raw counts and per capita)
 #raw data for egg counts
@@ -132,15 +142,40 @@ write.csv(egg.den.bio,'jarvis.egg.count.data.with.den.max.2019.3.6.csv')
 
 egg.den.bio<-read.csv("Data/jarvis.egg.count.data.with.den.max.2019.3.6.csv") #uses adjusted counts for density
 
+#new dataset as of 2019.4.16, summed egg counts by reef####
+#did this for one month, and also only have average densities
+#over the whole trial
+egg.den.bio<-read.csv("Data/new.data.2019.4.16.csv", na.strings = "") #uses adjusted counts for density
+
+#now data with just t1-3, NEED TO DO NA.STRINGS = "" FOR ANCOVA!!
+egg.den.bio<-read.csv("Data/new.data.2019.4.16a.no.t6.csv", na.strings = "") #uses adjusted counts for density
+levels(egg.den.bio$Treatment)
+View(egg.den.bio)
+
+#just t4.5
+egg.den.bio<-read.csv("Data/new.data.2019.4.16a.t1.5.csv", na.strings = "") #uses adjusted counts for density
+egg.den.bio<-na.omit(egg.den.bio)
+egg.2018.t4.5<-egg.den.bio[(egg.den.bio$Trial>3) & (egg.den.bio$Trial<6), ]
+
 #a. combined df is for combined counts
 #den.avg.egg
-egg.den.bio
+egg.den.bio<-na.omit(egg.den.bio)
 #b. 2018 only
 egg.2017.t1.2.3<-egg.den.bio[egg.den.bio$Trial<4,]
+#egg.2017.t1.2.3 <- egg.2017.t1.2.3[egg.2017.t1.2.3$Treatment = "Low" |"Medium" |"High"),] # select only rows with any value < 8
+egg.2017.t1.2.3<-subset(egg.2017.t1.2.3,Treatment!="Control")
+levels(egg.2017.t1.2.3$Treatment)
+View(egg.2017.t1.2.3)
+egg.2017.t1.2.3<-na.omit(egg.2017.t1.2.3)
+
+subset(dataframe, A==B & E!=0)
+egg.2017.t1.2.3<-egg.2017.t1.2.3[!(egg.2017.t1.2.3$Treatment=="Control"),]
+d<-d[!(d$A=="B" & d$E==0),]
 
 egg.2017.t1.2.3$Treatment<-ordered(egg.2017.t1.2.3$Treatment,levels=c("Low","Medium","High"))
 egg.2017
 tail(egg.2018)
+
 
 #c. 2018 t4 and t5 only only
 egg.2018.t4.5<-egg.den.bio[(egg.den.bio$Trial>3) & (egg.den.bio$Trial<6), ]
@@ -153,8 +188,8 @@ egg.2018$Treatment<-ordered(egg.2018$Treatment,c("Low","Medium","High"))
 #I'm not sure if I mentioned that in the methods that I sent to Mark, maybe yes!
 
 #seeing if there is a treatment effect within week 3 and 4
-egg.2018.wk3.4<-egg.2018.t4.5[(egg.2018.t4.5$Week>2),]
-
+egg.2018.wk3.4<-egg.2018.t4.5[(egg.2018.t4.5$Week>1),]
+df<-egg.2018.wk3.4
 
 #need to make a df that just contains the last trial (trial 6)
 egg.2018.t6<-egg.den.bio[egg.den.bio$Trial==6,]
@@ -186,6 +221,7 @@ df<-egg.2018.t4.5 #2018 only
 df<-egg.2018.t6
 #df$Treatment<-factor(df$Treatment, ordered=FALSE)#unordered factor so I can interpret results
 df$Treatment<-ordered(df$Treatment,levels=c("Low","Medium","High"))
+df$Treatment<-ordered(df$Treatment,levels=c("Low","Medium","High","Control"))
 df<-egg.2018.wk3.4
 #wanted to see if raw data showed anything different...not really
 #I don't think it's worth it to go down that rabbit hole, I think it's best to
@@ -193,15 +229,30 @@ df<-egg.2018.wk3.4
 #--the course of a month
 df<-gob.sub
 
+#log-transform counts for new data (2019.4.16)
+#thought this would be better for t6 counts
+df$log<-log(df$Egg.count+1)#...no
+
 ##########A) Unadjusted egg counts by treatment by week#############
 #2017.t1.2.3 analyses
-mod1<-lm(Egg.count~Treatment, data=df)#not normal
+mod1<-lm(Egg.count~Treatment+Density,data=df)#not normal
+#coef(summary(mod1))[,4]
 hist(resid(mod1))
 qqnorm(resid(mod1))
 qqline(resid(mod1))
 anova(mod1)
+Anova(mod1, type="II")
+summary(mod1)
 plot(mod1)#looks like equal variance though
+boxplot(Egg.count~Treatment*Density, data=df)
+View(df)
 
+library(HH)
+ancova(Egg.count ~ Treatment + Density, data=df)
+
+#with interactive effects of covariate
+ancova(Egg.count ~ Treatment * Density, data=df)
+       
 mod2<-lm(Egg.count~Treatment*Deployment.day, data=df)
 hist(resid(mod2))#more normal
 qqnorm(resid(mod2))
@@ -209,14 +260,14 @@ qqline(resid(mod2))
 anova(mod2)
 plot(mod2)#again, looks like equal variance
 
-mod3<-lm(Egg.count~Treatment*Deployment.day*Trial, data=df)
+mod3<-lm(Egg.count~Treatment*deployment.day*Trial, data=df)
 hist(resid(mod3))#more normal
 qqnorm(resid(mod3))
 qqline(resid(mod3))
 anova(mod3)
 plot(mod3)
 
-mod4<-lmer(Egg.count~Treatment*Deployment.day+(1|Trial),data=df)
+mod4<-lmer(Egg.count~Treatment*deployment.day+(1|Trial),data=df)
 hist(resid(mod4))#more normal
 qqnorm(resid(mod4))
 qqline(resid(mod4))
@@ -225,7 +276,7 @@ Anova(mod4) #go with this output? Type II Wald chi squared test
 plot(mod4)
 ranef(mod4)
 
-mod5<-lm(Egg.count~Treatment*Deployment.day*Density*Trial,data=df)
+mod5<-lm(Egg.count~Treatment*deployment.day*Density*Trial,data=df)
 hist(resid(mod5))
 qqnorm(resid(mod5))
 qqline(resid(mod5))
@@ -233,7 +284,7 @@ anova(mod5)
 summary(mod5)
 plot(mod5)#doesn't look so great...
 
-mod6<-lm(Egg.count~Treatment*Density,data=df)
+mod6<-lm(Egg.count~Treatment*Density*Week,data=df)
 hist(resid(mod6))
 qqnorm(resid(mod6))
 qqline(resid(mod6))
@@ -274,7 +325,7 @@ summary(mod10)
 plot(mod10)
 
 #this is what I think the model should be
-mod11<-lmer(Egg.count~Treatment*Density+(1|Trial)+(1|Deployment.day),data=df)
+mod11<-lmer(Egg.count~Treatment*Density+(1|Trial)+(1|deployment.day),data=df)
 hist(resid(mod11))
 qqnorm(resid(mod11))
 qqline(resid(mod11))
@@ -285,7 +336,7 @@ summary(mod11)
 plot(mod11)
 ranef(mod11)
 
-mod11a<-lmer(Egg.count~Treatment*Density+(1|Trial)+Deployment.day,data=df)
+mod11a<-lmer(Egg.count~Treatment*Density+(1|Trial)+deployment.day,data=df)
 hist(resid(mod11a))
 qqnorm(resid(mod11a))
 qqline(resid(mod11a))
@@ -1641,3 +1692,21 @@ plot(mod10aii)
 ranef(mod10aii)
 
 AIC(mod10a,mod10ai,mod10aii)
+
+#### power analysis to determine how many reefs I would need to see
+# sig. effect among treatments, given my current data
+
+#for general linear models (which I am using)
+pwr.f2.test(u =, v = , f2 = , sig.level = , power = )
+#u=num df, v=den df, f2=effect size, sig.level = 0.05, power = ??)
+
+
+#trial 1.2.3
+pwr.f2.test(u =2, v = 51, f2 = 0.17, sig.level = 0.05, power = )
+
+
+##looking at means with new dataset
+tapply(df$Egg.count,df$Treatment,mean)
+
+bargraph.CI(x.factor = Treatment, response = Egg.count, legend=FALSE, main="T1.2.3", xlab="Treatment", ylab="Eggs per reef (mean +/- se)", x.leg=9, yleg=4500, data = df)
+

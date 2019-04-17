@@ -26,8 +26,10 @@ library(simpleboot)
 #these data do not contain any info about predator species
 ptl<-read.csv("Data/2019.4.15.ptl.no.spp.csv") #short format (column for count and score)
 #this is the formaat I have to use for stats
-ptl<-read.csv("Data/2019.4.15.ptl.wrangling.csv") #long-format, used for plotting
+#ptl<-read.csv("Data/2019.4.15.ptl.wrangling.csv") #long-format, used for plotting
+ptl<-read.csv("Data/2019.4.16.ptl.wrangling.csv") #long-format, used for plotting
 ptl$Treatment<-ordered(ptl$Treatment, c("Low", "Medium","High","Control"))
+ptl$measure<-ordered(ptl$measure, c("contain.pred", "sublethal","lethal"))
 
 #subsetting data by trials, might have to analyze separately
 ptl.1.3<- ptl[(ptl$Trial <4), ]
@@ -51,7 +53,24 @@ bargraph.CI(x.factor = Treatment, response = value, beside=TRUE,
 bargraph.CI(response=value, x.factor=Treatment, group = measure, data = ptl,
             xlab = "Risk Treatment", ylab = "Prop of photos with predators", cex.lab = 1.5, x.leg = 1,
             col = "black", angle = 45, cex.names = 1.25,
-            density = c(0,20), legend = TRUE)
+            density = c(0,20), legend = FALSE)
+
+#not working the way I want it to in base R or sciplot
+
+#trying in ggplot
+ptl.means<-with(ptl, aggregate((value), list(Treatment=Treatment,measure=measure), mean))
+ptl.means
+#now apply the se function to the 4th column [,3]
+ptl.means$se<-with(ptl, aggregate((value), list(Treatment=Treatment,measure=measure), function(x) sd(x)/sqrt(length(x))))[,3]
+ptl.means
+
+# Grouped
+g<-ggplot(ptl.means, aes(fill=measure, y=x, x=Treatment)) + 
+  geom_bar(position="dodge", stat="identity")
+g + geom_linerange(aes(ymin=x-se, ymax=x+se), size=0.5,   
+                         position=position_dodge(0.90)) + theme(text = element_text(family="Arial")) +
+  labs(x="Risk Treatment", y="Proportion of photos")
+  
 
 #testing out some models to see if data are normal
 
@@ -109,3 +128,4 @@ anova(mod4) #no diff between high and medium, interesting
 
 #essentially, what are those averages showing? 5 + 1, average is 3, but that means 
 # something different biologically that 3 + 3
+

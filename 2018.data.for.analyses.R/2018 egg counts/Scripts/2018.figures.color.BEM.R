@@ -96,7 +96,7 @@ egg.wsn<- ggplot(egg.means, aes(x=Treatment, y=x, fill=Treatment)) +
   theme(axis.ticks.x = element_blank()) + scale_y_continuous(expand = c(0, 0))
 egg.wsn + geom_linerange(aes(ymin=x-se, ymax=x+se), size=0.5,   
                          position=position_dodge(.7)) + theme(text = element_text(family="Arial")) +
-  labs(x="Risk Treatment", y=)#+
+  labs(x="Risk Treatment", y="test")#+
   #geom_point(data=egg.2018.t4.5,aes(Treatment,Egg.count,color=Treatment),position="dodge")+
   #scale_color_manual(values=c("black","black","black"))
 
