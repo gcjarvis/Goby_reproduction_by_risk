@@ -84,3 +84,12 @@ lineplot.CI(Week,Density,group=Treatment,legend = TRUE,main= "trial 4", xlab="We
 lineplot.CI(Week,Density,group=Treatment,legend = TRUE,main= "trial 5", xlab="Week", ylab="Fish density per reef", data=gob.den.5)
 #only 6
 lineplot.CI(Week,Density,group=Treatment,legend = TRUE,main= "trial 6", xlab="Week", ylab="Fish density per reef", data=gob.den.6)
+
+#figuring out means for density by treatment
+
+den<-with(df, aggregate((den.max), list(Treatment=Treatment,Week=Week), mean))
+egg.means
+#now apply the se function to the 4th column [,3]
+egg.means$se<-with(egg.2018.t4.5, aggregate((Egg.count), list(Treatment=Treatment), function(x) sd(x)/sqrt(length(x))))[,2]
+egg.means
+

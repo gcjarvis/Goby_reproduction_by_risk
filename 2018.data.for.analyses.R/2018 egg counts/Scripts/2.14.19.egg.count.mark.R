@@ -235,7 +235,7 @@ df$log<-log(df$Egg.count+1)#...no
 
 ##########A) Unadjusted egg counts by treatment by week#############
 #2017.t1.2.3 analyses
-mod1<-lm(Egg.count~Treatment*Density,data=df)#not normal
+mod1<-lmer(Egg.count~Treatment*Week*Density+(1|Treatment:Reef),data=df)#not normal
 #coef(summary(mod1))[,4]
 hist(resid(mod1))
 qqnorm(resid(mod1))
@@ -251,6 +251,7 @@ library(HH)
 ancova(Egg.count ~ Treatment + Density, data=df)
 
 #with interactive effects of covariate
+ancova(Egg.count~Treatment*Week,data=df)
 ancova(Egg.count ~ Treatment * Density, data=df)
        
 mod2<-lm(Egg.count~Treatment*Deployment.day, data=df)
@@ -1710,3 +1711,5 @@ tapply(df$Egg.count,df$Treatment,mean)
 
 bargraph.CI(x.factor = Treatment, response = Egg.count, legend=FALSE, main="T1.2.3", xlab="Treatment", ylab="Eggs per reef (mean +/- se)", x.leg=9, yleg=4500, data = df)
 
+
+plot(A$Units,resid(model))

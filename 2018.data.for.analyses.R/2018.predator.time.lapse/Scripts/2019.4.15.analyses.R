@@ -24,7 +24,7 @@ library(effects)
 library(simpleboot)
 
 #these data do not contain any info about predator species
-ptl<-read.csv("Data/2019.4.15.ptl.no.spp.csv") #short format (column for count and score)
+ptl<-read.csv("Data/2019.4.18.ptl.short.format.csv") #short format (column for count and score)
 #this is the formaat I have to use for stats
 #ptl<-read.csv("Data/2019.4.15.ptl.wrangling.csv") #long-format, used for plotting
 ptl<-read.csv("Data/2019.4.16.ptl.wrangling.csv") #long-format, used for plotting
@@ -84,11 +84,13 @@ anova(mod1) #no diff in the prop of photos with predators seen per treatment
 #also, no difference in the prop of photos with preds by trial (can pool)
 
 #prop of photos with predators perceived as threat
+#note: reran this without control treatment, becuase of unequal variance
+# found nearly similar results
 
-mod2<-aov(score~Treatment, data=ptl)
+mod2<-lm(contain.predator~Treatment, data=ptl)
 hist(resid(mod2))
 qqnorm(resid(mod2))
-boxplot(score~Treatment, data=ptl)
+boxplot(contain.predator~Treatment, data=ptl)
 anova(mod2) #difference overall, but likely driven by 0 in low treatment
 #TukeyHSD(mod2,ptl$score~ptl$Treatment,ordered=TRUE)
 
@@ -105,7 +107,7 @@ boxplot(score~Treatment, data=ptl.sub.low)
 anova(mod3) #no diff between control, high, and med, as suspected
 
 #now dropping control from the data to see if there's a diff between high and med
-ptl.sub.cont<-subset(ptl.sub.low,Treatment!="Control")
+ptl.sub.cont<-subset(ptl,Treatment!="Control")
 mod4<-lm(score~Treatment,data=ptl.sub.cont)
 hist(resid(mod4))
 qqnorm(resid(mod4))
@@ -129,3 +131,43 @@ anova(mod4) #no diff between high and medium, interesting
 #essentially, what are those averages showing? 5 + 1, average is 3, but that means 
 # something different biologically that 3 + 3
 
+#2019.4.18 models and analyses
+View(ptl)
+
+#prop of photos that contained predators
+#note: reran this without control treatment, becuase of unequal variance
+# found nearly similar results
+
+mod2<-lm(contain.predator~Treatment, data=ptl)
+hist(resid(mod2))
+qqnorm(resid(mod2))
+boxplot(contain.predator~Treatment, data=ptl)
+anova(mod2)
+
+#prop of photos with predators adjacent to reef (score of 4)
+#comparing amoung groups that could contain this score,
+# given that the sig differnce is driven by low risk treatments (post-hoc showed)
+ptl.no.low<-subset(ptl,Treatment!="Low")
+
+mod3<-lm(sublethal~Treatment, data=ptl.no.low)
+hist(resid(mod3))
+qqnorm(resid(mod3))
+qqline(resid(mod3))
+Anova(mod3)
+anova(mod3)
+boxplot(sublethal~Treatment, data=ptl.no.low)
+
+#difference overall, but likely driven by 0 in low treatment
+#TukeyHSD(mod2,ptl$score~ptl$Treatment,ordered=TRUE)
+
+#prop of photos with preds seen directly ont he reef
+#excluding low and medium-risk treatments from the model
+ptl.no.low.med<-subset(ptl.no.low,Treatment!="Medium")
+
+mod4<-lm(sublethal~Treatment, data=ptl.no.low.med)
+hist(resid(mod4))
+qqnorm(resid(mod4))
+qqline(resid(mod4))
+Anova(mod4)
+anova(mod4)
+boxplot(sublethal~Treatment, data=ptl.no.low.med)

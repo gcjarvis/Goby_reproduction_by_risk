@@ -15,13 +15,14 @@ library(plyr)
 library(dplyr)
 library(ggplot2)
 library(extrafont)
-library(ggplot)
 library(tidyr)
+library(wesanderson)
 
 getwd()
 #importing raw data
 #tried to make the .csv file not contain any NA's 
 reco.raw<-read.csv("Data/Recollections.all.trials.2.23.19.csv")
+View(reco.raw)
 
 #recollection by sex for each reef, includes immatures, maybe will want to
 #--analyze that at some point
@@ -45,7 +46,7 @@ View(reco.reef)
 #simpler tibl that excludes sex and dep. day
 reco.reef.simple<-reco.wrang %>%
   group_by(Year,Trial,Reef,Treatment) %>%
-  summarize(.Count = mean(Count))
+  summarize(Count = sum(Count))
 
 View(reco.reef.simple)
 #calculating proportion of initial population recollected
@@ -60,6 +61,15 @@ reco.t6<-reco.reef.simple[reco.reef.simple$Trial==6,]
 df<-reco.t1.2.3
 df<-reco.t4.5
 df<-reco.t6
+View(df)
+
+#models
+mod1<-lm(Prop.reco~Treatment,data=df)
+hist(resid(mod1))#not normal
+qqnorm(resid(mod1))
+qqline(resid(mod1))
+anova(mod1)
+boxplot(Prop.reco~Treatment,data=df)
 
 
 #plotting#####
@@ -70,13 +80,9 @@ reco.means
 reco.means$se<-with(df, aggregate((Prop.reco), list(Treatment=Treatment), function(x) sd(x)/sqrt(length(x))))[,2]
 reco.means
 
-reco.means<-with(df, aggregate((Count), list(Treatment=Treatment), mean))
-reco.means
-#now apply the se function to the 4th column [,3]
-reco.means$se<-with(df, aggregate((Count), list(Treatment=Treatment), function(x) sd(x)/sqrt(length(x))))[,2]
-reco.means
-
 reco.means$Treatment<-ordered(reco.means$Treatment,levels=c("Low","Medium","High"))
+
+png(filename = "Output/reco.t.4.5.png", width = 700, height = 800)
 
 reco.plot<- ggplot(reco.means, aes(x=Treatment, y=x, fill=Treatment)) +
   geom_bar(stat="identity", colour= "black", width = 0.85, position="dodge")+ 
@@ -85,9 +91,39 @@ reco.plot<- ggplot(reco.means, aes(x=Treatment, y=x, fill=Treatment)) +
   #theme(legend.key.size = unit(1.3,'line')) + 
   #theme(legend.title=element_text(size=34) , legend.text=element_text(size=20)) 
   scale_fill_manual(values=c("#0072B2","#009E73","#D55E00")) + 
-  theme(axis.text.x=element_text(size=25, colour="black"),axis.text.y=element_text(size=25, colour="black"), axis.title=element_text(size=30,face="bold")) +
-  theme(axis.title.y = element_text(size= 30, margin = margin(t = 0, r = 20, b = 0, l = 0)), axis.title.x = element_text(margin = margin(t = 25, r = 0, b = 0, l = 0)), axis.text.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))) +
+  theme(axis.text.x=element_text(size=32, colour="black"),axis.text.y=element_text(size=32, colour="black"), axis.title=element_text(size=37,face="bold")) +
+  theme(axis.title.y = element_text(size= 37, margin = margin(t = 0, r = 20, b = 0, l = 0)), axis.title.x = element_text(margin = margin(t = 25, r = 0, b = 0, l = 0)), axis.text.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))) +
   theme(axis.ticks.x = element_blank()) + scale_y_continuous(expand = c(0, 0))
 reco.plot + geom_linerange(aes(ymin=x-se, ymax=x+se), size=0.5,   
                            position=position_dodge(.85)) + theme(text = element_text(family="Arial")) +
-  labs(x="Risk Treatment", y="Number of Gobies Recollected")
+  labs(x="Risk Treatment", y="Proportion of Gobies Recollected")
+
+dev.off()
+
+#trial 6
+reco.means<-with(df, aggregate((Prop.reco), list(Treatment=Treatment), mean))
+reco.means
+#now apply the se function to the 4th column [,3]
+reco.means$se<-with(df, aggregate((Prop.reco), list(Treatment=Treatment), function(x) sd(x)/sqrt(length(x))))[,2]
+reco.means
+
+reco.means$Treatment<-ordered(reco.means$Treatment,levels=c("Low","Medium","High","Control"))
+
+
+png(filename = "Output/reco.t.6.png", width = 700, height = 800)
+
+reco.plot<- ggplot(reco.means, aes(x=Treatment, y=x, fill=Treatment)) +
+  geom_bar(stat="identity", colour= "black", width = 0.85, position="dodge")+ 
+  scale_x_discrete(limits=c("Low","Medium","High","Control"))+
+  theme_classic() + theme(legend.position="none") + #scale_fill_discrete(limits=c("Low","Medium", "High")) +
+  #theme(legend.key.size = unit(1.3,'line')) + 
+  #theme(legend.title=element_text(size=34) , legend.text=element_text(size=20)) 
+  scale_fill_manual(values=c("#0072B2","#009E73","#D55E00","#FAD510")) + 
+  theme(axis.text.x=element_text(size=32, colour="black"),axis.text.y=element_text(size=32, colour="black"), axis.title=element_text(size=37,face="bold")) +
+  theme(axis.title.y = element_text(size= 37, margin = margin(t = 0, r = 20, b = 0, l = 0)), axis.title.x = element_text(margin = margin(t = 25, r = 0, b = 0, l = 0)), axis.text.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))) +
+  theme(axis.ticks.x = element_blank()) + scale_y_continuous(expand = c(0, 0))
+reco.plot + geom_linerange(aes(ymin=x-se, ymax=x+se), size=0.5,   
+                           position=position_dodge(.85)) + theme(text = element_text(family="Arial")) +
+  labs(x="Risk Treatment", y="Proportion of Gobies Recollected")
+
+dev.off()
