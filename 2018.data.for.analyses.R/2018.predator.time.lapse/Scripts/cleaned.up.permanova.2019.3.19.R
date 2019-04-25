@@ -23,6 +23,7 @@ library(vegan)
 ptl<-read.csv("Data/2019.3.19.ptl.csv")
 #arranging by treatment for PERMANOVA + PermDisp
 ptl<-arrange(ptl, Treatment)
+View(ptl)
 
 #subsetting data 
 d2<-subset(ptl,Trial<6) #trial 4 and 5
@@ -51,5 +52,48 @@ d3<-d3[!is.na(d3$Score.zero),]
 
 #figuring out how to get rid of the control
 
-permanovamodel1<-adonis(Score.zero~Treatment, data = d3, permutations = 100, method="euclidean", by= "terms")
+permanovamodel1<-adonis(contain.predator~Treatment, 
+                        data = ptl, permutations = 100,
+                        method="euclidean", by= "terms")
 permanovamodel1
+
+#permdisp
+## Bray-Curtis distances between samples
+dis <- vegdist(ptl$contain.predator)
+
+dis <- vegdist(varespec)
+
+## First 16 sites grazed, remaining 8 sites ungrazed
+groups <- factor(c(rep(1,16), rep(2,8)), labels = c("grazed","ungrazed"))
+
+## Calculate multivariate dispersions
+mod <- betadisper(dis, groups)
+mod
+
+## Perform test
+anova(mod)
+
+## Permutation test for F
+permutest(mod, pairwise = TRUE)
+
+## Tukey's Honest Significant Differences
+(mod.HSD <- TukeyHSD(mod))
+plot(mod.HSD)
+
+## Plot the groups and distances to centroids on the
+## first two PCoA axes
+plot(mod)
+
+## Draw a boxplot of the distances to centroid for each group
+boxplot(mod)
+
+## simulate missing values in 'd' and 'group'
+groups[c(2,20)] <- NA
+dis[c(2, 20)] <- NA
+mod2 <- betadisper(dis, groups) ## warnings
+mod2
+permutest(mod, control = permControl(nperm = 100))
+anova(mod2)
+plot(mod2)
+boxplot(mod2)
+plot(TukeyHSD(mod2))

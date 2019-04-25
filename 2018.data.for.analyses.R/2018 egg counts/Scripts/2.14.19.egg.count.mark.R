@@ -145,10 +145,19 @@ egg.den.bio<-read.csv("Data/jarvis.egg.count.data.with.den.max.2019.3.6.csv") #u
 #new dataset as of 2019.4.16, summed egg counts by reef####
 #did this for one month, and also only have average densities
 #over the whole trial
-egg.den.bio<-read.csv("Data/new.data.2019.4.16.csv", na.strings = "") #uses adjusted counts for density
+#egg.den.bio<-read.csv("Data/new.data.2019.4.16.csv", na.strings = "") #uses adjusted counts for density
+
+#same idea, but with density as categorical (L, M, H), and recollections
+#for t1.2.3
+egg.den.bio<-read.csv("Data/new.data.2019.4.23.t1.3.csv", na.strings = "") #uses adjusted counts for density
+#for t4.5
+egg.den.bio<-read.csv("Data/new.data.2019.4.23.no.t6.csv", na.strings = "") #uses adjusted counts for density
+#for t6
+egg.den.bio<-read.csv("Data/new.data.2019.4.23.csv", na.strings = "") #uses adjusted counts for density
 
 #now data with just t1-3, NEED TO DO NA.STRINGS = "" FOR ANCOVA!!
 egg.den.bio<-read.csv("Data/new.data.2019.4.16a.no.t6.csv", na.strings = "") #uses adjusted counts for density
+
 levels(egg.den.bio$Treatment)
 View(egg.den.bio)
 
@@ -179,6 +188,7 @@ tail(egg.2018)
 
 #c. 2018 t4 and t5 only only
 egg.2018.t4.5<-egg.den.bio[(egg.den.bio$Trial>3) & (egg.den.bio$Trial<6), ]
+egg.2018.t4.5<-subset(egg.2018.t4.5,Treatment!="Control")
 egg.2018$Treatment<-ordered(egg.2018$Treatment,c("Low","Medium","High"))
 #egg.2018<-den.avg.egg[den.avg.egg$Trial>3, c("Trial", "Reef", "Week", "Treatment", "Egg.count", "Density","per.capita.repro")]
 #egg.2018<-egg.den.bio[egg.den.bio$Trial>3,]
@@ -244,11 +254,30 @@ anova(mod1)
 Anova(mod1, type="II")
 summary(mod1)
 plot(mod1)#looks like equal variance though
-boxplot(Egg.count~Treatment*Density, data=df)
+boxplot(Egg.count~Treatment*Density.letter, data=df)
 View(df)
 
+#model with density.letter as a category
+mod1<-lm(Egg.count~Treatment*Recollection,data=df)
+hist(resid(mod1))
+qqnorm(resid(mod1))
+qqline(resid(mod1))
+anova(mod1)
+
+#quick sciplot to visualize
+bargraph.CI(x.factor = Recollection, response = Egg.count, 
+            group= Treatment, legend=TRUE, main="all trials", 
+            data = df)
+
+boxplot(Egg.count~Treatment*Recollection,data=df)
+
+#ANCOVA using density as a continuous variable
 library(HH)
-ancova(Egg.count ~ Treatment + Density, data=df)
+ancova(Egg.count ~ Treatment + Density.letter, data=df)
+
+#ANCOVA with recollection as continuous variable
+library(HH)
+ancova(Egg.count ~ Treatment * Recollection, data=df)
 
 #with interactive effects of covariate
 ancova(Egg.count~Treatment*Week,data=df)
@@ -1703,7 +1732,9 @@ pwr.f2.test(u =, v = , f2 = , sig.level = , power = )
 
 
 #trial 1.2.3
-pwr.f2.test(u =2, v = 51, f2 = 0.17, sig.level = 0.05, power = )
+pwr.f2.test(u =2, v = 36, f2 = 0.17, sig.level = 0.05, power = )
+
+pwr.f2.test(u =2, v = , f2 = 0.17, sig.level = 0.05, power = 0.80)
 
 
 ##looking at means with new dataset

@@ -25,7 +25,7 @@ library(simpleboot)
 
 #these data do not contain any info about predator species
 ptl<-read.csv("Data/2019.4.18.ptl.short.format.csv") #short format (column for count and score)
-#this is the formaat I have to use for stats
+#this is the format I have to use for stats
 #ptl<-read.csv("Data/2019.4.15.ptl.wrangling.csv") #long-format, used for plotting
 ptl<-read.csv("Data/2019.4.16.ptl.wrangling.csv") #long-format, used for plotting
 ptl$Treatment<-ordered(ptl$Treatment, c("Low", "Medium","High","Control"))
@@ -70,7 +70,6 @@ g<-ggplot(ptl.means, aes(fill=measure, y=x, x=Treatment)) +
 g + geom_linerange(aes(ymin=x-se, ymax=x+se), size=0.5,   
                          position=position_dodge(0.90)) + theme(text = element_text(family="Arial")) +
   labs(x="Risk Treatment", y="Proportion of photos")
-  
 
 #testing out some models to see if data are normal
 
@@ -138,11 +137,18 @@ View(ptl)
 #note: reran this without control treatment, becuase of unequal variance
 # found nearly similar results
 
-mod2<-lm(contain.predator~Treatment, data=ptl)
+#rerun without trial 6
+ptl<-subset(ptl,Trial!=6)
+#log-transformed counts
+ptl$log<-log(ptl$contain.predator + 1)
+
+mod2<-aov(contain.predator~Treatment,data=ptl)
 hist(resid(mod2))
 qqnorm(resid(mod2))
 boxplot(contain.predator~Treatment, data=ptl)
+Anova(mod2)
 anova(mod2)
+TukeyHSD(mod2,"Treatment",ordered=TRUE)
 
 #prop of photos with predators adjacent to reef (score of 4)
 #comparing amoung groups that could contain this score,
@@ -164,10 +170,14 @@ boxplot(sublethal~Treatment, data=ptl.no.low)
 #excluding low and medium-risk treatments from the model
 ptl.no.low.med<-subset(ptl.no.low,Treatment!="Medium")
 
-mod4<-lm(sublethal~Treatment, data=ptl.no.low.med)
+mod4<-lm(lethal~Treatment, data=ptl.no.low.med)
 hist(resid(mod4))
 qqnorm(resid(mod4))
 qqline(resid(mod4))
 Anova(mod4)
 anova(mod4)
-boxplot(sublethal~Treatment, data=ptl.no.low.med)
+boxplot(lethal~Treatment, data=ptl.no.low.med)
+
+bargraph.CI(x.factor = Treatment, response = lethal, main="T6 Count data, with zeros", 
+            xlab="Treatment", ylab="Predator count per reef (mean +/- se)", data=ptl.no.low.med)
+
