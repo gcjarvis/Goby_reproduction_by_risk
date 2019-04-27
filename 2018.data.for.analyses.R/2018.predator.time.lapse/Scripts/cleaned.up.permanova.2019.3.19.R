@@ -20,10 +20,21 @@ library(psych)
 library(vegan)
 
 #importing raw data
-ptl<-read.csv("Data/2019.3.19.ptl.csv")
+#old df ptl<-read.csv("Data/2019.3.19.ptl.csv")
+#new df as of 2019.4.26
+ptl<-read.csv("Data/2019.4.26.ptl.permanova.csv")
 #arranging by treatment for PERMANOVA + PermDisp
 ptl<-arrange(ptl, Treatment)
 View(ptl)
+colSums(is.na(ptl))# no NA's
+
+#after lunch: get results from permanova and make tables (I'd make a new script for this
+# copying what you did from this line and above)
+
+#after that, make rest of figures and tables in ggplot and 
+
+#after that, finish draft...
+
 
 #subsetting data 
 d2<-subset(ptl,Trial<6) #trial 4 and 5
@@ -33,7 +44,7 @@ d3<-subset(ptl,Trial>5) #trial 6
 #need to get rid of NA's to run PERMANOVA
 colSums(is.na(d2)) # count of # of NA's within df
 #omit na within score column
-d2<-d2[!is.na(d2$Score.zero),]
+d2<-d2[!is.na,]
 #removing control treatment from df for t4 and 5 (will need to do this for 2017 data as well)
 d2<-subset(ptl,Treatment!="Control")
 
@@ -61,7 +72,7 @@ permanovamodel1
 ## Bray-Curtis distances between samples
 dis <- vegdist(ptl$contain.predator)
 
-dis <- vegdist(varespec)
+#dis <- vegdist(varespec)
 
 ## First 16 sites grazed, remaining 8 sites ungrazed
 groups <- factor(c(rep(1,16), rep(2,8)), labels = c("grazed","ungrazed"))

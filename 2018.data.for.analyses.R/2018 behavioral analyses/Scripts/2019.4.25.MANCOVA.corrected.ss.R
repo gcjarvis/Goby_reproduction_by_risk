@@ -49,6 +49,13 @@ mancova(data=behave.2018.t4.5, deps=c('proportion.exposed','movements.min','bite
 #low > med > high: trendlikely driven by differences between low and high treatments (i.e. low and med were very similar)
 boxplot(proportion.exposed~Treatment, data=behave.2018.t4.5)
 
+#calculatign percent differences
+tapply(behave.2018.t4.5$proportion.exposed, 
+       behave.2018.t4.5$Treatment, mean) #18% (sig) decrease in prop time exposed on HR
+tapply(behave.2017$proportion.exposed, 
+       behave.2017$Treatment, mean) #22% (NS) decrease in prop time exposed on HR
+
+
 #also saw effect of covariate on 1) prop.exposed and 2) total.dist.moved
 
 #plotting regressions for general idea
