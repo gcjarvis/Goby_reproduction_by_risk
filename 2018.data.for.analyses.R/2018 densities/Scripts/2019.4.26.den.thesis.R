@@ -114,16 +114,17 @@ gob.den<-read.csv("Data/density.2019.4.26.no.d18.t4.5.csv")
 gob.den<- na.omit(gob.den)
 den.2018.t4.5<-gob.den[(gob.den$Trial>3) & (gob.den$Trial<6), ]
 
-mod2<-aov(Density~Treatment*Day, data=den.2018.t4.5)
-hist(resid(mod2))#more normal
-qqnorm(resid(mod2))
-qqline(resid(mod2))
-anova(mod2)
-plot(mod2)#again, looks like equal variance
-#TukeyHSD(mod2) #not working for this model for some reason
-tapply(den.2018.t4.5$Density,den.2018.t4.5$Treatment,mean)
-#    Low   Medium     High 
-#8.364130 8.643243 6.693548 = 23% fewer fish seen on high-risk reefs
+mod3<-aov(Density~Treatment*Day, data=den.2018.t6)
+hist(resid(mod3))#more normal
+qqnorm(resid(mod3))
+qqline(resid(mod3))
+anova(mod3)
+plot(mod3)#again, looks like equal variance
+TukeyHSD(mod3) #not working for this model for some reason
+tapply(den.2018.t6$Density,den.2018.t6$Treatment,mean)
+#   Low  Medium    High Control 
+# 4.60    4.35    3.90    3.45 = significant interaction between day and treatment, driven by differences
+# in high/control and low/med treatments, not sure what happened, because all cages were covered for first 24 hours
 
 
 #2018 t6 plot#####

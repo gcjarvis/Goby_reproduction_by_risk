@@ -25,6 +25,7 @@ library(MASS)
 library(nlme)
 library(pwr)
 library(HH)#for ancova and plots
+library(vegan)
 
 #A. load data (egg counts and densities combined into one for raw counts and per capita)
 #raw data for egg counts
