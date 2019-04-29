@@ -22,6 +22,7 @@ library(MASS)
 library(boot)
 library(effects)
 library(simpleboot)
+library(wesanderson)
 
 #these data do not contain any info about predator species
 ptl<-read.csv("Data/2019.4.18.ptl.short.format.csv") #short format (column for count and score)
@@ -64,12 +65,25 @@ ptl.means
 ptl.means$se<-with(ptl, aggregate((value), list(Treatment=Treatment,measure=measure), function(x) sd(x)/sqrt(length(x))))[,3]
 ptl.means
 
+
+
 # Grouped
+png(filename = "Output/ptl.thesis.png", width = 1100, height = 700)
+
 g<-ggplot(ptl.means, aes(fill=measure, y=x, x=Treatment)) + 
-  geom_bar(position="dodge", stat="identity")
+  geom_bar(position="dodge", stat="identity",colour= "black", width = 0.7)+
+  scale_x_discrete(limits=c("Low","Medium","High","Control"))+
+  theme_classic() + theme(legend.position="right")  + #scale_fill_discrete(name="Predator Scores",labels=c(" Male"," Female", " Transitional","x")) +
+  theme(legend.key.size = unit(1.3,'line')) + 
+  scale_fill_manual(values=c("#0B775E","#C6CDF7","#EBCC2A")) + 
+  theme(axis.text.x=element_text(size=32, colour="black"),axis.text.y=element_text(size=32, colour="black"), axis.title=element_text(size=37,face="bold")) +
+  theme(axis.title.y = element_text(size= 37, margin = margin(t = 0, r = 20, b = 0, l = 0)), axis.title.x = element_text(margin = margin(t = 25, r = 0, b = 0, l = 0)), axis.text.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))) +
+  theme(axis.ticks.x = element_blank()) + scale_y_continuous(expand = c(0, 0),limits = c(0,0.26), breaks = c(0.05,0.10,0.15,0.20,0.25)) #,breaks = c(5000,10000,15000,20000))
 g + geom_linerange(aes(ymin=x-se, ymax=x+se), size=0.5,   
-                         position=position_dodge(0.90)) + theme(text = element_text(family="Arial")) +
-  labs(x="Risk Treatment", y="Proportion of photos")
+                         position=position_dodge(0.71)) + theme(text = element_text(family="Arial")) +
+  labs(x="Risk Treatment", y="Proportion of Photos")
+
+dev.off()
 
 #testing out some models to see if data are normal
 
