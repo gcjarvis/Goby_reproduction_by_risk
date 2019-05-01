@@ -34,7 +34,8 @@ egg.anc.2017<-with(egg.2017, aggregate((Egg.count), list(Treatment=Treatment), m
 egg.anc.2017$se<-with(egg.2017, aggregate((Egg.count), list(Treatment=Treatment), 
                                           function(x) sd(x)/sqrt(length(x))))[,2]
 
-png(filename = "Output/2017.thesis.png", width = 700, height = 800)
+png(filename = "Output/2017.thesis.png", width = 700, height = 800)#thesis
+png(filename = "Output/2017.bigger.thesis.png", width = 800, height = 700)#talk
 
 egg.plot.2017<- ggplot(egg.anc.2017, aes(x=Treatment, y=x, fill=Treatment)) +
   geom_bar(stat="identity", colour= "black", width = 0.7, position="dodge")+ 
@@ -58,7 +59,8 @@ egg.anc.2018.t4.5<-with(egg.2018.t4.5, aggregate((Egg.count), list(Treatment=Tre
 egg.anc.2018.t4.5$se<-with(egg.2018.t4.5, aggregate((Egg.count), list(Treatment=Treatment), 
                                           function(x) sd(x)/sqrt(length(x))))[,2]
 
-png(filename = "Output/2018.t4.5.thesis.png", width = 700, height = 800)
+png(filename = "Output/2018.t4.5.thesis.png", width = 700, height = 800)#thesis
+png(filename = "Output/2018.t4.5.bigger.thesis.png", width = 800, height = 700)#defense talk
 
 egg.plot.2018<- ggplot(egg.anc.2018.t4.5, aes(x=Treatment, y=x, fill=Treatment)) +
   geom_bar(stat="identity", colour= "black", width = 0.7, position="dodge")+ 
@@ -82,6 +84,7 @@ egg.anc.2018.t6$se<-with(egg.2018.t6, aggregate((Egg.count), list(Treatment=Trea
                                                     function(x) sd(x)/sqrt(length(x))))[,2]
 
 png(filename = "Output/2018.t6.thesis.png", width = 700, height = 800)
+png(filename = "Output/2018.t6.bigger.thesis.png", width = 800, height = 700)#talk
 
 egg.plot.2018.t6<- ggplot(egg.anc.2018.t6, aes(x=Treatment, y=x, fill=Treatment)) +
   geom_bar(stat="identity", colour= "black", width = 0.7, position="dodge")+ 

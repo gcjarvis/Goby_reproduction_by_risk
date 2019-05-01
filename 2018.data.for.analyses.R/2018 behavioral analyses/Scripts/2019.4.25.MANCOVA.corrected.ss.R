@@ -28,6 +28,8 @@ head(behave)
 behave.2017<-behave[behave$Trial<4, ]
 behave.2018.t4.5<-behave[c((behave$Trial>3) & (behave$Trial<6)), ]
 
+
+View(behave.2017)
 # FYI, ran both of these MANCOVAs with Trial included as a factor, and didn't find any differences by trial
 # removed trial from the model
 

@@ -17,6 +17,9 @@ library(lme4)
 #egg counts
 
 egg.den.bio<-read.csv("Data/jarvis.egg.count.data.with.den.max.2019.3.6.csv") #uses adjusted counts for density
+#updated data
+egg.den.bio<-read.csv("Data/new.data.2019.4.16a.t1.5.csv", na.strings = "")
+
 #trial 1-3
 egg.2017.t1.2.3<-egg.den.bio[(egg.den.bio$Trial<4),]
 egg.2017.t1.2.3$Treatment<-ordered(egg.2017.t1.2.3$Treatment,levels=c("Low","Medium","High"))
@@ -106,18 +109,21 @@ egg.wsn + geom_linerange(aes(ymin=x-se, ymax=x+se), size=0.5,
 means <- tapply(egg.2018.t4.5$Egg.count,egg.2018.t4.5$Treatment,mean)
 points(means,col="red",pch=18)
 
+png(filename = "Output/baxplot.defense.t.6.png", width = 800, height = 700)
 boxplot(Egg.count~Treatment,data=egg.2018.t4.5,
         col=c("#0072B2","#009E73","#D55E00"),
-        ylab="Number of Eggs per Reef",xlab="Risk Treatment",
+        ylab="Total Reproduction per Reef",xlab="Risk Treatment",
         cex.lab=2.0, cex.axis=1.65,
         par(family="sans"), par(font.lab=2), par(mar=c(5,6,4,1)+.1))
 points(means,col="black",pch=23,bg="white",cex=2,lwd=1.5) 
+
+dev.off()
 
 #consider with notch?
 
 boxplot(Egg.count~Treatment,data=egg.2018.t4.5,notch=TRUE,
         col=c("#0072B2","#009E73","#D55E00"),
-        ylab="Number of Eggs per Reef",xlab="Risk Treatment",
+        ylab="Total Reproduction per Reef",xlab="Risk Treatment",
         cex.lab=2.0, cex.axis=1.65,
         par(family="sans"), par(font.lab=2), par(mar=c(5,6,4,1)+.1))
         points(means,col="black",pch=23,bg="white",cex=2,lwd=1.5)
