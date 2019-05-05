@@ -151,6 +151,7 @@ egg.den.bio<-read.csv("Data/jarvis.egg.count.data.with.den.max.2019.3.6.csv") #u
 #same idea, but with density as categorical (L, M, H), and recollections
 #for t1.2.3
 egg.den.bio<-read.csv("Data/new.data.2019.4.23.t1.3.csv", na.strings = "") #uses adjusted counts for density
+View(egg.den.bio)
 #for t4.5
 egg.den.bio<-read.csv("Data/new.data.2019.4.23.no.t6.csv", na.strings = "") #uses adjusted counts for density
 #for t6
