@@ -19,6 +19,7 @@ library(lme4)
 #setting up df's
 # trials 1-3
 behave<-read.csv("Data/2019.4.25.behavior.ss.csv") #doesn't include unnecessary NA's
+behave<- na.omit(behave)
 b.2017.t1.2.3<-behave[(behave$Trial<4),]
 b.2017.t1.2.3$Treatment<-ordered(b.2017.t1.2.3$Treatment,levels=c("Low","Medium","High"))
 

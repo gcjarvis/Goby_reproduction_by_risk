@@ -83,6 +83,7 @@ boxplot(Prop.reco~Treatment, data=reco.t1.2.3)
 
 #2018.t.4.5
 # trial as fixed factor
+
 mod2<-lm(Prop.reco~Treatment*Trial, data=reco.t4.5)
 hist(resid(mod2))
 qqnorm(resid(mod2))
@@ -111,7 +112,7 @@ boxplot(Prop.reco~Treatment, data=reco.t4.5)
 
 reco.t6$log<-log(reco.t6$Prop.reco+1)
 
-mod3<-lm(Prop.reco~Treatment,data=reco.t6)
+mod3<-lm(Count~Treatment,data=reco.t6)
 hist(resid(mod3))#not normal
 qqnorm(resid(mod3))
 qqline(resid(mod3))

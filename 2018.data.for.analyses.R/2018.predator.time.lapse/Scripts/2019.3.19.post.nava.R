@@ -40,7 +40,6 @@ library(boot)
 library(effects)
 library(simpleboot)
 
-
 getwd()
 #ptl<-read.csv("Data/2019.3.3.ptl.with.interval.factor.csv")
 #ptl<-read.csv("Data/2019.3.2.ptl.five.min.intervals.csv")
@@ -272,8 +271,7 @@ m1 <- glm(factor(Score.zero) ~ Treatment, data = d2,
 summary(m1)
 Anova(m1,type="II")
 hist(resid(m1))
-qqnorm(resid(m1)
-       
+qqnorm(resid(m1))
 
 #counts from t4.5
 
