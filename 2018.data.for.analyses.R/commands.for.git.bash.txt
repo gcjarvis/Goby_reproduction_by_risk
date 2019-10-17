@@ -6,5 +6,24 @@ git pull
 git add name of folder or file you want to add *.csv will add all of that file type in folder
 *the following code will add all new files since the last commit, have to specify two separate commands in the same line
 *	the "&&" function specifies that
-git add -A && git commit -m "2019.4.25.commit" 
+git add -A (adds all of the files in your directory, don't do this with large files!) 
+git commit -m "2019.4.25.commit" 
 git push
+
+Notes for what I did on 2019.10.15 to get rid of large files
+issue: I wasn't able to commit changes to my repository because I had files that were too large (thesis ppt)
+
+rationale: there are two places where the files exist: the hard drive on my computer, and on my github repository
+- I had merger issues, because the two places did not have the same files in them (I deleted my ppt manually 
+-- through my github repository). What I had to do was go into the HD on my computer, copy all of the files and
+-- folders that I wanted to save, and then I deleted them from the master directory (goby reproduction by risk
+-- folder). I deleted my main data/R folder, as well as the file that was causing the issue, my thesis PPT.
+- Then I pulled all of the files from my github repository, which synced all of the files online to my
+-- HD (essentially brought back the files that I wanted in the master). After that, I commited
+-- committed 
+
+2019.10.16 notes on what I did to make sure that the new scripts were in the correct folders
+-for some reason, the scripts for egg counts and density surveys were saved outside of the script folders
+-- so I cut and pasted them in their respective script folders.
+- I'd be interested in seeing whether they exist in the github repository in the folders that are one level up, 
+-- or if they never even migrated to the online repository
