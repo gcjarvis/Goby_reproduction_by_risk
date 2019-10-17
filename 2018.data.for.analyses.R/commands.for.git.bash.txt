@@ -6,8 +6,8 @@ git pull
 git add name of folder or file you want to add *.csv will add all of that file type in folder
 *the following code will add all new files since the last commit, have to specify two separate commands in the same line
 *	the "&&" function specifies that
-git add -A (adds all of the files in your directory, don't do this with large files!) 
-git commit -m "2019.4.25.commit" 
+git add -A && git commit -m "what you did between now and your last commit" (adds all of the files in your directory, don't do this with large files!) 
+git commit -m "2019.4.25.commit" (use this if you're just updating existing files)
 git push
 
 Notes for what I did on 2019.10.15 to get rid of large files
