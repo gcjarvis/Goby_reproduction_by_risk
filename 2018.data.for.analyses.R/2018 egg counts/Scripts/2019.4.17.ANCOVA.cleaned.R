@@ -37,7 +37,7 @@ egg.2018.t6<-egg.den.bio[(egg.den.bio$Trial>5),]
 #2017
 mod <- ancova(Egg.count ~ Treatment*Density, data=egg.2017.t1.2.3)
 pred <- predict(mod)
-#View(pred)
+View(pred)
 
 #plot
 ggplot(data = cbind(egg.2017.t1.2.3, pred),

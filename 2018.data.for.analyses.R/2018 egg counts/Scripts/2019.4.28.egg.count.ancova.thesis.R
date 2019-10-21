@@ -230,8 +230,6 @@ mapvalues(x, from = c("beta", "gamma"), to = c("two", "three"))
 png(filename = "Output/2018.t.6.ancova.png", width = 800, height = 700)#thesis
 #png(filename = "Output/2017.ancova.thesis.png", width = 800, height = 700)#talk
 
-
-
 anc<-ggplot(egg.t6, aes(avg.inhab, Egg.count, color=Treatment, fill=Treatment)) +
   geom_smooth(method="lm", se=FALSE, show.legend = FALSE) +
   #facet_grid(. ~ Trial,labeller=labeller(Trial = labels.t4.5))  +
