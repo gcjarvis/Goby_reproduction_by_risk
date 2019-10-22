@@ -56,7 +56,7 @@ egg.anc<-with(repro, aggregate((Egg.count), list(Treatment=Treatment), mean))
 egg.anc$se<-with(repro, aggregate((Egg.count), list(Treatment=Treatment), 
                                   function(x) sd(x)/sqrt(length(x))))[,2]
 
-png(filename = "Output/19.10.22.gray.ancova.png", width = 900, height = 800)
+png(filename = "Output/19.10.22.gray.ancova.legend.2.png", width = 900, height = 800)
 
 #plot seems a little more realistic when I don't round to the nearest whole number (ceiling)
 
@@ -65,7 +65,7 @@ anc1<-ggplot(repro, aes(Recollection, Egg.count, shape=Treatment, linetype=Treat
   geom_smooth(method="lm", se=FALSE, show.legend = TRUE)  +
   geom_point(size=3)+
   theme_classic()+
-  labs(x="Number of Gobies Recollected", y="Total Eggs Laid Per Reef")+
+  labs(x="Number of Gobies Recollected", y="Total Reproduction Per Reef")+
   expand_limits(y=0)+
   scale_color_manual(values=c("black", "#666666", "grey"))+
   scale_linetype_manual(values=c("solid", "dashed", "twodash"))+
