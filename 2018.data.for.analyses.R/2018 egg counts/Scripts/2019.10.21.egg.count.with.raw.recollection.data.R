@@ -56,7 +56,7 @@ egg.anc<-with(repro, aggregate((Egg.count), list(Treatment=Treatment), mean))
 egg.anc$se<-with(repro, aggregate((Egg.count), list(Treatment=Treatment), 
                                   function(x) sd(x)/sqrt(length(x))))[,2]
 
-png(filename = "Output/19.10.22.gray.ancova.legend.3.png", width = 900, height = 700)
+png(filename = "Output/19.10.22.gray.ancova.legend.4.png", width = 900, height = 600)
 
 #plot seems a little more realistic when I don't round to the nearest whole number (ceiling)
 
