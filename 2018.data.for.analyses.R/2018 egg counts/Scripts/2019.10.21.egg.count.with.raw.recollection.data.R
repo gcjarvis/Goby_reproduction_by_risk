@@ -3,6 +3,8 @@
 # Date: Mon Oct 21 16:34:41 2019
 # Notes: I think this is more representative than using an average (20+ # reco/2),
 #       so I want to go with this over a calculated metric
+#       A) I went back through and redid the analyses, and it seems to be 
+#           better this way, so I'm going to use that raw data as the covariate
 # --------------
 
 rm(list=ls())
@@ -24,20 +26,14 @@ library(vegan)
 #also includes a column ("T6.comparison") where uncaged and high are separated
 repro<-read.csv("Data/new.data.2019.9.30.csv", na.strings = "")
 
-#adding column for average density, rounded to nearest whole number of fish
-#repro$avg.inhab<-(ceiling((repro$Recollection+20)/2))
-
-#ordering "Treatment" and "T.6.comparison"
-repro$Treatment<-ordered(repro$Treatment, levels=c("Low","Medium","High"))
-repro$T6.comparison<-ordered(repro$T6.comparison, levels=c("Low","Medium","High","Uncaged"))
-
-#model
+#mixed model####
 mod.2<-lmer(Egg.count~ Treatment * Recollection + (1|Trial), data=repro)
 hist(resid(mod.2))
 qqnorm(resid(mod.2))
 qqline(resid(mod.2))
 anova(mod.2)
 Anova(mod.2) 
+fixef(mod.2)
 
 #plotting relationship between recolelctions and egg count
 plot(repro$Recollection, repro$Egg.count)
@@ -53,3 +49,35 @@ Anova(mod.ER)
 summary(mod.ER)
 #shows clear relationship, but only has an R-squared of 0.385
 #this makes sense becasue of the large spread of repro for each recollection value
+
+#making a B&W figure for this analysis####
+repro$Treatment<-ordered(repro$Treatment,levels=c("Low","Medium","High"))
+egg.anc<-with(repro, aggregate((Egg.count), list(Treatment=Treatment), mean))
+egg.anc$se<-with(repro, aggregate((Egg.count), list(Treatment=Treatment), 
+                                  function(x) sd(x)/sqrt(length(x))))[,2]
+
+png(filename = "Output/19.10.22.gray.ancova.png", width = 900, height = 800)
+
+#plot seems a little more realistic when I don't round to the nearest whole number (ceiling)
+
+#building from the bottom, not including shape by treatment
+anc1<-ggplot(repro, aes(Recollection, Egg.count, shape=Treatment, linetype=Treatment, col=Treatment)) +
+  geom_smooth(method="lm", se=FALSE, show.legend = TRUE)  +
+  geom_point(size=3)+
+  theme_classic()+
+  labs(x="Number of Gobies Recollected", y="Total Eggs Laid Per Reef")+
+  expand_limits(y=0)+
+  scale_color_manual(values=c("black", "#666666", "grey"))+
+  scale_linetype_manual(values=c("solid", "dashed", "twodash"))+
+  theme(axis.text.x=element_text(size=20, colour="black"),
+        axis.text.y=element_text(size=20, colour="black"), 
+        axis.title=element_text(size=20))+
+  theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0)), 
+        axis.title.x = element_text(margin = margin(t = 12, r = 0, b = 0, l = 0)), 
+        axis.text.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))) +
+  theme(legend.text=element_text(size=18)) +
+  theme(legend.title =element_text(size=20))+
+  labs(color  = "Perceived Risk", linetype = "Perceived Risk", shape = "Perceived Risk")
+anc1
+#sort of lame that I had to code it like this to get the legend correc
+dev.off()

@@ -58,3 +58,4 @@ anc + scale_color_manual(values=c("#0072B2","#009E73","#D55E00")) +
   theme(legend.title =element_text(size=30, face="bold"))
   
 dev.off()
+
