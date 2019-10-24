@@ -158,6 +158,6 @@ bargraph.CI(x.factor = T6.comparison, response = Density,
 # that makes sense
 
 #no grouping factor
-bargraph.CI(x.factor = Treatment, response = Egg.count, 
+bargraph.CI(x.factor = Treatment, response = Density, 
             legend=TRUE, main="all trials, HR combined w uncaged, no trial", 
-            data = repro)
+            data = viz.surv)
