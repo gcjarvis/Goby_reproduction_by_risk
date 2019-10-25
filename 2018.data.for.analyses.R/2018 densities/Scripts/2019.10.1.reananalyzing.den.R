@@ -33,7 +33,7 @@ library(agricolae)#for tukey post-hoc test
 #importing dataset, adding number of gobies on each reef, ordering treatments####
 #includes a cloumn ("Treatment") where uncaged and HR are coded as "High"
 #also includes a column ("T6.comparison") where uncaged and high are separated
-viz.surv<-read.csv("Data/density.2019.10.1.csv", na.strings = "")
+viz.surv<-read.csv("Data/density.2019.10.1.csv")
 viz.surv$Density<-as.numeric(viz.surv$Density)
 viz.surv$den.max<-as.numeric(viz.surv$den.max)
 
