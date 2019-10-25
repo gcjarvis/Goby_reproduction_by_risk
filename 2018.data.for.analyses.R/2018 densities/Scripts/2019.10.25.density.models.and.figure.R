@@ -46,7 +46,7 @@ den<-with(viz.surv, aggregate((den.max), list(Day=Day,Treatment=Treatment), mean
 den$se<-with(viz.surv, aggregate((den.max), list(Day=Day,Treatment=Treatment), 
                                  function(x) sd(x)/sqrt(length(x))))[,3]
 
-png(filename = "Output/2019.10.24.den.max.MS.means.thicker.png", width = 1000, height = 500)
+png(filename = "Output/2019.10.24.den.max.MS.means.0.75.thickness.png", width = 1000, height = 500)
 
 den.plot <- ggplot(den, aes(x=Day, y=x, shape=Treatment, color=Treatment, linetype=Treatment))+ 
   geom_linerange(aes(ymin=x-se, ymax=x+se), 
@@ -57,7 +57,7 @@ den.plot <- ggplot(den, aes(x=Day, y=x, shape=Treatment, color=Treatment, linety
   scale_color_manual(values=c("black", "#666666", "grey"))+
   scale_linetype_manual(values=c("solid", "dashed", "twodash"))+
   geom_line(aes(linetype=Treatment))+
-  geom_line(size=0.8)+
+  geom_line(size=0.75)+
   theme(axis.text.x=element_text(size=20, colour="black"),
         axis.text.y=element_text(size=20, colour="black"), 
         axis.title=element_text(size=20))+
