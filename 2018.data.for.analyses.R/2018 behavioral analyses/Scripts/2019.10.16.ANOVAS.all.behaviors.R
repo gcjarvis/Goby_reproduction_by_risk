@@ -7,6 +7,14 @@
 #       with trial included as a random factor
 #       2) I didn't do observations for uncaged reefs, so don't need to worry about
 #       changing the labels in the .csv file
+#       3) 2019.10.25 - decided to use the number of fish recollected from each reef
+#         as the covariate, because density is confounded by treatent
+#         - In the models where recollections weren't significant, decided to drop from the model,
+#             but I should probably check with Mark on that one. It seems like a more 
+#             powerful analysis if I remove that factor from the model
+#         -- I also did posthoc tests with multiple comparisons for the mixed models
+#         - found that exposure time was sig. lower in high-risk treatment, which is
+#             consistent with the results from my density counts
 # --------------
 
 #clear workspace
@@ -25,9 +33,15 @@ library(car)#type III SS
 #library(effects)#adjusted means
 #easiest mancova package
 #library(jmv)
+library(agricolae)#can't use standard tukey test for mixed models
+library(multcomp)# post-hoc for fixed effects in mixed model
 
 #loading df####
-behave<-read.csv("Data/2019.10.8.behavior.ss.csv", na.strings = "")
+behave<-read.csv("Data/2019.10.8.behavior.ss.csv")
+behave<-na.omit(behave) #no NA's to remove
+#with recollection data
+behave<-read.csv("Data/2019.10.25.behavior.includes.recollections.csv")
+behave<-na.omit(behave)
 head(behave)
 #going to test and see if it makes a difference in models if trial is coded 
 #as a factor instead of an integer, it's the same
@@ -46,7 +60,7 @@ behave$tfactor<-as.factor(behave$Trial)
 # mixed-model ANOVA, and with is in the model as as a mixed-model ANCOVA
 #
 
-# 1) proportion of time exposed, no effect, but I want to try different ANOVA's####
+# 1) proportion of time exposed, sig. effect, ran post-hoc test for mult comp: L(a),M(ab),H(b)####
 # without density in model
 #trial different outcome if coded as a factor??? NO
 mod.ex<-lmer(proportion.exposed~ Treatment  + (1|Trial), data=behave)
@@ -68,6 +82,29 @@ anova(mod.ex.anc)#type III anova = no treatment effect, no interactive effect
 Anova(mod.ex.anc)#Analysis of deviance, type II wald test = sig. trt. effect,
 #                                                     no density, no interactive
 
+#rerunning analyses, with number of fish recollected from each reef as covariate
+#if there is no correlation between number fo fish recollected and frequency of behavior
+# I would say remove it from model
+mod.ex.anc.reco<-lmer(proportion.exposed~ Treatment * Recollection  + (1|Trial), data=behave)
+hist(resid(mod.ex.anc.reco))#looks like a slightly better model in terms of assumptions
+qqnorm(resid(mod.ex.anc.reco))
+qqline(resid(mod.ex.anc.reco))
+anova(mod.ex.anc.reco)#type III anova = no treatment effect, no interactive effect
+Anova(mod.ex.anc.reco)#Analysis of deviance, type II wald test = sig. trt. effect,
+#                                                     no density, no interactive
+
+#plotting relationship between recollections and exposure time
+plot(behave$Recollection, behave$proportion.exposed)
+abline(lm(behave$proportion.exposed~behave$Recollection))
+#hardly any relationship there, consider dropping from model
+
+mod.ex.anc.no.reco<-lmer(proportion.exposed~ Treatment + (1|Trial), data=behave)
+hist(resid(mod.ex.anc.no.reco))#looks like a slightly better model in terms of assumptions
+qqnorm(resid(mod.ex.anc.no.reco))
+qqline(resid(mod.ex.anc.no.reco))
+anova(mod.ex.anc.no.reco)#type III anova = treatment effect
+Anova(mod.ex.anc.no.reco)#Analysis of deviance, type II wald test = sig. trt. effect
+
 #plotting
 #grouped by trial
 bargraph.CI(x.factor = Treatment, response = proportion.exposed, 
@@ -79,8 +116,15 @@ bargraph.CI(x.factor = Treatment, response = proportion.exposed,
             data = behave)
 
 # seems to be less time exposed in high-risk treatment, need to run tukey test
+# with multcomp package
+#summary(glht(YOUR MODEL, linfct=mcp(YOUR FIXED FACTOR="Tukey")))
+summary(glht(mod.ex, linfct=mcp(Treatment="Tukey")))
+#seems like the sig. difference is between low and high, but not med and high, 
+# or low and med, so L(a)>M(ab)>H(b), if you were going to graph it
+#I'm not sure if you can do post-hoc with mixed models, but this multcomp
+# package (multiple comparisons) may be a workaround
 
-# 2) movements per minute, sig.effect####
+# 2) movements per minute, no sig.effect, no post-hoc####
 mod.mo<-lmer(movements.min ~ Treatment  + (1|Trial), data=behave)
 hist(resid(mod.mo))
 qqnorm(resid(mod.mo))
@@ -97,6 +141,21 @@ anova(mod.mo.anc)#type III anova = sig. treatment effect, no interactive effect
 Anova(mod.mo.anc)#Analysis of deviance, type II wald test =  no trt. effect,
 #                                                     no density, no interactive
 
+#rerunning as mixed model with recollections as covariate
+#plotting relationship between recollections and movements
+plot(behave$Recollection, behave$movements.min)
+abline(lm(behave$movements.min~behave$Recollection))
+#hardly any relationship there, consider dropping from model
+
+mod.mo.anc.reco<-lmer(movements.min~ Treatment *Recollection + (1|Trial), data=behave)
+hist(resid(mod.mo.anc.reco))#looks like a slightly better model in terms of assumptions
+qqnorm(resid(mod.mo.anc.reco))
+qqline(resid(mod.mo.anc.reco))
+anova(mod.mo.anc.reco)#type III anova = no treatment effect
+Anova(mod.mo.anc.reco)#Analysis of deviance, type II wald test = sig. trt. effect
+
+#see first model for stats when recollection dropped from model
+
 #plotting
 #grouped by trial
 bargraph.CI(x.factor = Treatment, response = movements.min, 
@@ -110,7 +169,7 @@ bargraph.CI(x.factor = Treatment, response = movements.min,
 , # looks like gobies in low risk spent more time exposed than in high and medium
 # need to run tukey test
 
-# 3) bites per minute, no effect####
+# 3) bites per minute, no effect, no post-hoc####
 mod.bi<-lmer(bites.min~ Treatment  + (1|Trial), data=behave)
 hist(resid(mod.bi))
 qqnorm(resid(mod.bi))
@@ -127,6 +186,21 @@ anova(mod.bi.anc)#type III anova = no treatment effect, no interactive effect
 Anova(mod.bi.anc)#Analysis of deviance, type II wald test = no trt. effect,
 #                                                     no density, no interactive
 
+#rerunning analysis as a mixed model ancova (recollections as covariate)
+mod.bi.anc.reco<-lmer(bites.min ~ Treatment * Recollection  + (1|Trial), data=behave)
+hist(resid(mod.bi.anc.reco))#looks about the same as ANOVA in terms of assumptions
+qqnorm(resid(mod.bi.anc.reco))
+qqline(resid(mod.bi.anc.reco))
+anova(mod.bi.anc.reco)#type III anova = no treatment effect, no interactive effect
+Anova(mod.bi.anc.reco)#Analysis of deviance, type II wald test = no trt. effect,
+#                                                     no density, no interactive
+
+#plotting relationship between recollections and bite rate
+plot(behave$Recollection, behave$bites.min)
+abline(lm(behave$bites.min~behave$Recollection))
+
+#no relationship, see first model for stats when term is dropped
+
 #plotting
 #grouped by trial
 bargraph.CI(x.factor = Treatment, response = bites.min, 
@@ -141,7 +215,7 @@ bargraph.CI(x.factor = Treatment, response = bites.min,
 
 
 
-# 4) total distance moved, no effect####
+# 4) total distance moved, no effect of treatment, but positive effect of recollection, keep recollection in the model? I included what I think is an explanation for the behavior####
 mod.di<-lmer(total.dist.moved~ Treatment  + (1|Trial), data=behave)
 hist(resid(mod.di))
 qqnorm(resid(mod.di))
@@ -157,6 +231,38 @@ qqline(resid(mod.di.anc))
 anova(mod.di.anc)#type III anova = no treatment effect, no interactive effect
 Anova(mod.di.anc)#Analysis of deviance, type II wald test = no trt. effect,
 #                                                     no density, no interactive
+
+
+#rerunning analysis as a mixed model ancova (recollection as covariate)
+mod.di.anc.reco<-lmer(total.dist.moved ~ Treatment * Recollection + (1|Trial), data=behave)
+hist(resid(mod.di.anc.reco))#better fit than ANOVA in terms of assumptions
+qqnorm(resid(mod.di.anc.reco))
+qqline(resid(mod.di.anc.reco))
+anova(mod.di.anc.reco)#type III anova = no treatment effect, higher recollection=more movements, no interactive effect
+Anova(mod.di.anc.reco)#Analysis of deviance, type II wald test = no trt. effect,
+#                                                     recollection effect, no interactive
+
+#plotting relationship between recollections and distance moved
+plot(behave$Recollection, behave$total.dist.moved)
+abline(lm(behave$total.dist.moved~behave$Recollection))
+#positive relationship
+
+mod.di.rec<-lm(total.dist.moved~Recollection, data=behave)
+hist(resid(mod.di.rec))
+qqnorm(resid(mod.di.rec))
+qqline(resid(mod.di.rec))
+anova(mod.di.rec)
+Anova(mod.di.rec)
+summary(mod.di.rec)
+#shows clear relationship, but only has an R-squared of 0.078, so not a great fit
+#rationale: 1) more fish on reefs may have been associated with more interactions?
+# - that will show in the courtship analyses
+# 2) may have been a proxy for safety? more fish on reef overall = more boldness?
+
+#maybe slight positive relationship?
+
+#will keep recollection in the model, I suppose, because here it was meaningful
+#I'm not sure what it means, but I'll keep it in the model
 
 #plotting
 #grouped by trial
@@ -176,7 +282,7 @@ hist(resid(mod.co))
 qqnorm(resid(mod.co))
 qqline(resid(mod.co))
 anova(mod.co) # no effect
-Anova(mod.di) # no effect
+Anova(mod.co) # no effect
 
 #rerunning analysis as a mixed model ancova (density as covariate)
 mod.co.anc<-lmer(courtship.min ~ Treatment * density  + (1|Trial), data=behave)
@@ -186,6 +292,17 @@ qqline(resid(mod.co.anc))
 anova(mod.co.anc)#type III anova = no treatment effect, no interactive effect
 Anova(mod.co.anc)#Analysis of deviance, type II wald test = no trt. effect,
 #                                                     no density, no interactive
+
+#rerunning with recollections as covariate
+mod.co.anc.reco<-lmer(courtship.min ~ Treatment * Recollection  + (1|Trial), data=behave)
+hist(resid(mod.co.anc.reco))#better fit than ANOVA in terms of assumptions
+qqnorm(resid(mod.co.anc.reco))
+qqline(resid(mod.co.anc.reco))
+anova(mod.co.anc.reco)#type III anova = no treatment effect, no interactive effect
+Anova(mod.co.anc.reco)#Analysis of deviance, type II wald test = no trt. effect,
+#                                                     no density, no interactive
+
+#no effect of recollection
 
 #plotting
 #grouped by trial
@@ -198,5 +315,6 @@ bargraph.CI(x.factor = Treatment, response = courtship.min,
             data = behave)
 
 # no diff, but seems to trend as M>L>H
+
 
 

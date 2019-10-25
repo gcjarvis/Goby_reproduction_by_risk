@@ -14,8 +14,8 @@
 # Overall findings: A.) With all trials pooled, accounting for trial as a random
 #     factor in a mixed-effect model, and using a Poisson distribution (count data),
 #     there were no differences in the number of fish recollected.
-#     Suggests changes in behavior (more seen in high-risk viz. surveys) without changes
-#     -in mortality (recollections) or reproduction (egg counts similar)
+#     Suggests changes in behavior (less seen in HR reefs) without changes
+#     in mortality (recollections) or reproduction (egg counts similar)
 # --------------
 
 #loading packages####
@@ -38,6 +38,7 @@ library(agricolae)#for tukey post-hoc test
 #includes a column ("Treatment") where uncaged and HR are coded as "High"
 #also includes a column ("T6.comparison") where uncaged and high are separated
 reco<-read.csv("Data/2019.10.8.recollection.data.csv", na.strings = "")
+reco<-read.csv("Data/2019.10.8.recollection.data.csv")
 
 #subsetting T6 only for comparison
 reco.T6<-reco[c(91:110),c(1:6)]
@@ -108,55 +109,14 @@ summary(mod.t6p)
 fixed.effects(mod.t6p)
 ranef(mod.t6p)
 
-
 #plots
 
-#counts
-lineplot.CI(Day,den.max,group=Treatment,legend = TRUE,
-            main="Visual surveys, combined HR and Uncaged", 
-            xlab="Day", ylab="May number fo fish seen", 
-            data=viz.surv)
+#recollections with control and high risk pooled together
+bargraph.CI(x.factor = Treatment, response = Count, 
+            legend=TRUE, main="recollections, all trials pooled", 
+            data = reco)
 
-#square-root transformed data for den max
-lineplot.CI(Day,sqrt.dm,group=Treatment,legend = TRUE,
-            main="Visual surveys, combined HR and Uncaged", 
-            xlab="Day", ylab="May number fo fish seen (sqrt)", 
-            data=viz.surv)
-
-#wanting to see how it looks as a bargraph by day
-bargraph.CI(x.factor = Day, response = den.max, 
-            group= Treatment, legend=TRUE, main="all trials, HR combined grouped by trial", 
-            data = viz.surv)
-
-#no grouping factor, seems like H>L=M, strange...with den.max
-#goes against what Mark found...
-bargraph.CI(x.factor = Treatment, response = den.max, 
-            legend=TRUE, main="den.max, HR combined grouped by trial", 
-            data = viz.surv)
-
-#with Density
-bargraph.CI(x.factor = Treatment, response = Density, 
-            legend=TRUE, main="Density, HR combined grouped by trial", 
-            data = viz.surv)
-
-#going to run the same model again but with distiction between
-# HR and uncaged treatments
-#results: U=H>L=M
-#seems like uncaged is driving trend upward when combined
-# with HR, but in general, doesn't bring the average up that much,
-# likely because of low replication
-bargraph.CI(x.factor = T6.comparison, response = den.max, 
-            legend=TRUE, main="den.max, HR separated caged.uncaged", 
-            data = viz.surv)
-
-#now just with density
-bargraph.CI(x.factor = T6.comparison, response = Density, 
-            legend=TRUE, main="density, HR separated caged.uncaged", 
-            data = viz.surv)
-#seems like the average values are slightly lower when we use den instead of den.max
-# that makes sense
-
-#no grouping factor
-bargraph.CI(x.factor = Treatment, response = Egg.count, 
-            legend=TRUE, main="all trials, HR combined w uncaged, no trial", 
-            data = repro)
+#recollections including distinction between control and high risk, just for trial 6
+bargraph.CI(x.factor = T6.comparison, response = Count, 
+            legend=TRUE, main="recollections, all trials pooled", 
+            data = reco.T6)
