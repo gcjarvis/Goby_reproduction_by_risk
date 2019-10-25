@@ -24,7 +24,13 @@ library(vegan)
 #importing dataset, adding number of gobies on each reef, ordering treatments####
 #includes a cloumn ("Treatment") where uncaged and HR are coded as "High"
 #also includes a column ("T6.comparison") where uncaged and high are separated
+#should stop using this "na.strings" code
 repro<-read.csv("Data/new.data.2019.9.30.csv", na.strings = "")
+repro<-read.csv("Data/new.data.2019.9.30.csv")
+
+#omitting rows with NA's to see if it changes analyses
+repro<-na.omit(repro)
+#no rows were omitted, because there aren't any NA's in the raw data
 
 #mixed model####
 mod.2<-lmer(Egg.count~ Treatment * Recollection + (1|Trial), data=repro)
@@ -52,6 +58,11 @@ summary(mod.ER)
 
 #making a B&W figure for this analysis####
 repro$Treatment<-ordered(repro$Treatment,levels=c("Low","Medium","High"))
+egg.anc<-with(repro, aggregate((Egg.count), list(Treatment=Treatment), mean))
+egg.anc$se<-with(repro, aggregate((Egg.count), list(Treatment=Treatment), 
+                                  function(x) sd(x)/sqrt(length(x))))[,2]
+
+#making sure that NA's aren't throwing off the data
 egg.anc<-with(repro, aggregate((Egg.count), list(Treatment=Treatment), mean))
 egg.anc$se<-with(repro, aggregate((Egg.count), list(Treatment=Treatment), 
                                   function(x) sd(x)/sqrt(length(x))))[,2]

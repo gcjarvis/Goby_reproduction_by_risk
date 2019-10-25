@@ -21,6 +21,7 @@ library(pwr)
 
 #loading data
 viz.surv<-read.csv("Data/density.2019.10.1.csv")
+viz.surv<-na.omit(viz.surv)
 viz.surv$Density<-as.numeric(viz.surv$Density)
 viz.surv$den.max<-as.numeric(viz.surv$den.max)
 

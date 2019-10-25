@@ -25,7 +25,7 @@ viz.surv<-read.csv("Data/density.2019.10.1.csv")
 #omitting rows with NA values for density, where no survey was done
 viz.surv<-na.omit(viz.surv)
 viz.surv$den.max<-as.numeric(viz.surv$den.max)
-viz.surv$Day<-as.factor(viz.surv$Day)
+#viz.surv$Day<-as.factor(viz.surv$Day)
 
 #mixed model, with den.max as the 
 mod.1<-lmer(den.max ~ Treatment*Day + (1|Trial), data=viz.surv)
@@ -71,4 +71,29 @@ den.plot <- ggplot(den, aes(x=Day, y=x, shape=Treatment, color=Treatment, linety
 den.plot
 dev.off()
 
-7, 14, 21,28
+#7, 14, 21,28
+
+png(filename = "Output/2019.10.24.den.max.MS.means.default.thickness.png", width = 1000, height = 500)
+
+den.plot <- ggplot(den, aes(x=Day, y=x, shape=Treatment, color=Treatment, linetype=Treatment))+ 
+  geom_linerange(aes(ymin=x-se, ymax=x+se), 
+                 position=position_dodge(0)) +
+  geom_point(size=3)+
+  labs(x="Day", y = "Number of Fish Seen")+
+  theme_classic() + 
+  scale_color_manual(values=c("black", "#666666", "grey"))+
+  scale_linetype_manual(values=c("solid", "dashed", "twodash"))+
+  geom_line(aes(linetype=Treatment))+
+  geom_line(size=0.75)+
+  theme(axis.text.x=element_text(size=20, colour="black"),
+        axis.text.y=element_text(size=20, colour="black"), 
+        axis.title=element_text(size=20))+
+  theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0)), 
+        axis.title.x = element_text(margin = margin(t = 12, r = 0, b = 0, l = 0)), 
+        axis.text.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))) +
+  theme(legend.text=element_text(size=18)) +
+  theme(legend.title =element_text(size=20))+
+  scale_y_continuous(expand = c(0, 0),limits = c(0,18),breaks = c(4,8,12,16)) + scale_x_continuous(expand=c(0,0), limits= c(0,29),breaks=c(2,4,6,8,10,12,14,16,18,20,22,24,26,28))+
+  labs(color  = "Perceived Risk", linetype = "Perceived Risk", shape = "Perceived Risk")
+den.plot
+dev.off()
