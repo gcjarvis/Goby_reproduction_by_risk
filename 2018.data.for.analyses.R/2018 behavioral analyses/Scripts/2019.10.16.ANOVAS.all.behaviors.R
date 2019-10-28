@@ -45,7 +45,11 @@ behave<-na.omit(behave)
 head(behave)
 #going to test and see if it makes a difference in models if trial is coded 
 #as a factor instead of an integer, it's the same
-behave$tfactor<-as.factor(behave$Trial)
+#behave$tfactor<-as.factor(behave$Trial)
+#making the variable "avg.inhab" ((20+reco)/2), rounded to the nearest whole fish
+behave$avg.inhab<-(ceiling((behave$Recollection+20)/2))
+#going to include the average number of inhabitants as the covariate,
+# -not the number of fish recollected
 
 #behaviors and order of script:####
 # 1) proportion of time exposed
@@ -105,6 +109,21 @@ qqline(resid(mod.ex.anc.no.reco))
 anova(mod.ex.anc.no.reco)#type III anova = treatment effect
 Anova(mod.ex.anc.no.reco)#Analysis of deviance, type II wald test = sig. trt. effect
 
+#mixed model with avg.inhab as covariate
+mod.avg.inhab.mm<-lmer(proportion.exposed~ Treatment * avg.inhab  + (1|Trial), data=behave)
+hist(resid(mod.avg.inhab.mm))#looks like a slightly better model in terms of assumptions
+qqnorm(resid(mod.avg.inhab.mm))
+qqline(resid(mod.avg.inhab.mm))
+anova(mod.avg.inhab.mm)#type III anova = no treatment effect, no interactive effect
+Anova(mod.avg.inhab.mm)#Analysis of deviance, type II wald test = sig. trt. effect,
+#                                                     no density, no interactive
+
+#plotting relationship between avg.inhab and exposure time
+plot(behave$avg.inhab, behave$proportion.exposed)
+abline(lm(behave$proportion.exposed~behave$avg.inhab))
+#hardly any relationship there, dropped from the model, found sig.
+# -treatment effect
+
 #plotting
 #grouped by trial
 bargraph.CI(x.factor = Treatment, response = proportion.exposed, 
@@ -156,6 +175,15 @@ Anova(mod.mo.anc.reco)#Analysis of deviance, type II wald test = sig. trt. effec
 
 #see first model for stats when recollection dropped from model
 
+mod.mo.avg.inhab<-lmer(movements.min~ Treatment *avg.inhab + (1|Trial), data=behave)
+hist(resid(mod.mo.avg.inhab))#looks like a slightly better model in terms of assumptions
+qqnorm(resid(mod.mo.avg.inhab))
+qqline(resid(mod.mo.avg.inhab))
+anova(mod.mo.avg.inhab)#type III anova = no treatment effect
+Anova(mod.mo.avg.inhab)#Analysis of deviance, type II wald test = sig. trt. effect
+ 
+#no difference, even when using avg.inhab, so dropping from model
+
 #plotting
 #grouped by trial
 bargraph.CI(x.factor = Treatment, response = movements.min, 
@@ -198,6 +226,19 @@ Anova(mod.bi.anc.reco)#Analysis of deviance, type II wald test = no trt. effect,
 #plotting relationship between recollections and bite rate
 plot(behave$Recollection, behave$bites.min)
 abline(lm(behave$bites.min~behave$Recollection))
+
+#using avg.inhab as covariate
+mod.bi.avg.inhab<-lmer(bites.min ~ Treatment * avg.inhab  + (1|Trial), data=behave)
+hist(resid(mod.bi.avg.inhab))#looks about the same as ANOVA in terms of assumptions
+qqnorm(resid(mod.bi.avg.inhab))
+qqline(resid(mod.bi.avg.inhab))
+anova(mod.bi.avg.inhab)#type III anova = no treatment effect, no interactive effect
+Anova(mod.bi.avg.inhab)#Analysis of deviance, type II wald test = no trt. effect,
+#                                                     no density, no interactive
+
+#plotting relationship between recollections and bite rate
+plot(behave$avg.inhab, behave$bites.min)
+abline(lm(behave$bites.min~behave$avg.inhab))
 
 #no relationship, see first model for stats when term is dropped
 
@@ -264,6 +305,22 @@ summary(mod.di.rec)
 #will keep recollection in the model, I suppose, because here it was meaningful
 #I'm not sure what it means, but I'll keep it in the model
 
+#using avg.inhab as covariate, no interaction, so will drop interaction and rerun model
+mod.di.avg.inhab<-lmer(total.dist.moved ~ Treatment + avg.inhab + (1|Trial), data=behave)
+hist(resid(mod.di.avg.inhab))#better fit than ANOVA in terms of assumptions
+qqnorm(resid(mod.di.avg.inhab))
+qqline(resid(mod.di.avg.inhab))
+anova(mod.di.avg.inhab)#type III anova = no treatment effect, higher avg.inhab=more movements, no interactive effect
+Anova(mod.di.avg.inhab)#Analysis of deviance, type II wald test = no trt. effect,
+#                                                     avg.inhab effect, no interactive
+
+#plotting relationship between recollections and distance moved
+plot(behave$avg.inhab, behave$total.dist.moved)
+abline(lm(behave$total.dist.moved~behave$avg.inhab))
+#positive relationship
+
+#wonder if I should plot this like an ANCOVA? Not sure
+
 #plotting
 #grouped by trial
 bargraph.CI(x.factor = Treatment, response = total.dist.moved, 
@@ -303,6 +360,17 @@ Anova(mod.co.anc.reco)#Analysis of deviance, type II wald test = no trt. effect,
 #                                                     no density, no interactive
 
 #no effect of recollection
+
+#rerunning with avg.inhab as covariate
+mod.co.anv.inhab<-lmer(courtship.min ~ Treatment * avg.inhab  + (1|Trial), data=behave)
+hist(resid(mod.co.anv.inhab))#better fit than ANOVA in terms of assumptions
+qqnorm(resid(mod.co.anv.inhab))
+qqline(resid(mod.co.anv.inhab))
+anova(mod.co.anv.inhab)#type III anova = no treatment effect, no interactive effect
+Anova(mod.co.anv.inhab)#Analysis of deviance, type II wald test = no trt. effect,
+#                                                     no density, no interactive
+
+#removed from model and reran
 
 #plotting
 #grouped by trial

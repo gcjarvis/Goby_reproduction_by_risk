@@ -18,7 +18,14 @@
 #     did not depend on the number of fish on the reefs (i.e. no interactive effects)
 #     B.) no difference in output between high-risk and ungacaged treatments,
 #     which justifies pooling them as "High-risk" in the overall analyses
+#     C.) 2019.10.26 - revisited these analyses after talking with M. Steele on 2019.10.25
+#         -- realized that the best coviariate to use is the average number of
+#         -- inhabitants, given that it is probably most representative of what was
+#         -- actually on the reefs. The ones that lost fish in the beginning (e.g., 
+#         -- in trals 1-3 and 6) those were anomalies, and not relaly the trials that I am
+#         -- basing my conclusions on (I feel most confident in trials 4 and 5)
 # --------------
+
 
 #loading packages####
 rm(list=ls())
@@ -41,6 +48,7 @@ library(vegan)
 repro<-read.csv("Data/new.data.2019.9.30.csv", na.strings = "")
 
 #adding column for average density, rounded to nearest whole number of fish
+#this is the metric that I will use as the covariate in all of the other analyses as well
 repro$avg.inhab<-(ceiling((repro$Recollection+20)/2))
 
 #ordering "Treatment" and "T.6.comparison"
@@ -59,6 +67,9 @@ anova(mod.1)
 #c. sig. differences in reproduction based on the number of gobies, the trial, 
 # and interaction between the two
 #d. no three-way interaction
+#e. not surprising that there were differences among trials, given different durations
+#-- I think that is justification alone for including trial as a random effect, given that
+#-- the trials differed in duration; that is how I should word it in the MS
 
 #plots
 
@@ -77,12 +88,14 @@ hist(resid(mod.2))
 qqnorm(resid(mod.2))
 qqline(resid(mod.2))
 anova(mod.2)
+Anova(mod.2)
 #a. no effect of treatment on output
 #b. there was an effect of number of gobies on output
 #bi. general trend seems to be, more gobies, higher reproduction, 
 #   regardless of trt, and this occurs independent of trial effects;
 #   meaning that this is the trend even in Part A, w/trial as a fixed effect
 #c. no interactive effects of treatment and number of gobies
+summary(mod.2)
 
 lineplot.CI(avg.inhab,Egg.count,group=Treatment,legend = TRUE,
             main="Reproduction vs. number of gobies", 
