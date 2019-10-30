@@ -161,3 +161,15 @@ bargraph.CI(x.factor = T6.comparison, response = Density,
 bargraph.CI(x.factor = Treatment, response = Density, 
             legend=TRUE, main="all trials, HR combined w uncaged, no trial", 
             data = viz.surv)
+
+#models for repeated-measures ANOVA
+mod.nest<-glmer(den.max ~ Treatment + (1|Treatment:Reef) + (1|Trial),family=poisson, data=viz.surv)
+hist(resid(mod.nest))
+qqnorm(resid(mod.nest))
+qqline(resid(mod.nest))
+anova(mod.nest)
+Anova(mod.nest) 
+summary(mod.nest)
+#chi-squared shows an effect of treatment, showing more fish seen in HR/uncaged treament
+fixed.effects(mod.nest)
+ranef(mod.nest)

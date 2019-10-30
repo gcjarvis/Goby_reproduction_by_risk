@@ -28,7 +28,7 @@ viz.surv<-na.omit(viz.surv)
 viz.surv$den.max<-as.numeric(viz.surv$den.max)
 #viz.surv$Day<-as.factor(viz.surv$Day)
 
-#mixed model, with den.max as the 
+#mixed model, with den.max as the response
 mod.1<-lmer(den.max ~ Treatment*Day + (1|Trial), data=viz.surv)
 hist(resid(mod.1))
 qqnorm(resid(mod.1))
@@ -40,6 +40,33 @@ summary(mod.1)
 #chi-squared shows an effect of treatment, showing more fish seen in HR/uncaged treament
 fixef(mod.1)
 ranef(mod.1)
+
+#repeated measures version of the same model
+#mixed model, with den.max as the response
+mod.1.nest<-lmer(den.max ~ Treatment*Day + (1|Treatment:Reef) + (1|Trial), data=viz.surv)
+hist(resid(mod.1.nest))
+qqnorm(resid(mod.1.nest))
+qqline(resid(mod.1.nest))
+anova(mod.1.nest) #sig. effect of trt., and also of Day, no interactive effects
+#L+M>H, and fewer fish seen over time, saw the same relative number of fish,
+# regardless of treatment (no interactive effects, need to make that more clear)
+summary(mod.1.nest)
+#chi-squared shows an effect of treatment, showing more fish seen in HR/uncaged treament
+fixef(mod.1.nest)
+ranef(mod.1.nest)
+
+#mixed model, with den.max as the response, no repeated-measure, but including reef as a random effect
+mod.reef<-lmer(den.max ~ Treatment*Day + (1|Reef) + (1|Trial), data=viz.surv)
+hist(resid(mod.reef))
+qqnorm(resid(mod.reef))
+qqline(resid(mod.reef))
+anova(mod.reef) #sig. effect of trt., and also of Day, no interactive effects
+#L+M>H, and fewer fish seen over time, saw the same relative number of fish,
+# regardless of treatment (no interactive effects, need to make that more clear)
+summary(mod.reef)
+#chi-squared shows an effect of treatment, showing more fish seen in HR/uncaged treament
+fixef(mod.reef)
+ranef(mod.reef)
 
 #plotting
 viz.surv$Treatment<-ordered(viz.surv$Treatment,levels=c("Low","Medium","High"))
