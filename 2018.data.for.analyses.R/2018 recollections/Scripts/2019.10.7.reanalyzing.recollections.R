@@ -48,6 +48,14 @@ reco.T6<-reco[c(91:110),c(1:6)]
 #   when using the untransformed data. No diff between Hi and Un in T6, but skewed data
 #   because of low ss for that trial
 
+#not including trial
+mod.1n<-lm(Count ~ Treatment, data=reco)
+hist(resid(mod.1n))
+qqnorm(resid(mod.1n))
+qqline(resid(mod.1n))
+anova(mod.1n)
+Anova(mod.1n)
+
 #trial as a fixed factor, normal distribution
 mod.1f<-lm(Count ~ Treatment*Trial, data=reco)
 hist(resid(mod.1f))
@@ -120,3 +128,7 @@ bargraph.CI(x.factor = Treatment, response = Count,
 bargraph.CI(x.factor = T6.comparison, response = Count, 
             legend=TRUE, main="recollections, all trials pooled", 
             data = reco.T6)
+#citing the lmerTest package, used to get stats on mixed models
+#example cite("R, boot-package", refs, textual = TRUE)
+
+citation("lmerTest")
