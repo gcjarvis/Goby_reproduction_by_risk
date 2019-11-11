@@ -67,7 +67,7 @@ behave$avg.inhab<-(ceiling((behave$Recollection+20)/2))
 # 1) proportion of time exposed, sig. effect, ran post-hoc test for mult comp: L(a),M(ab),H(b)####
 # without density in model
 #trial different outcome if coded as a factor??? NO
-mod.ex<-lmer(proportion.exposed~ Treatment  + (1|Trial), data=behave)
+mod.ex<-lmer(proportion.exposed~ Treatment + (1|Trial), data=behave)
 hist(resid(mod.ex))
 qqnorm(resid(mod.ex))
 qqline(resid(mod.ex))

@@ -87,8 +87,9 @@ mod.2<-lmer(Egg.count~ Treatment * avg.inhab + (1|Trial), data=repro)
 hist(resid(mod.2))
 qqnorm(resid(mod.2))
 qqline(resid(mod.2))
-anova(mod.2)
-Anova(mod.2)
+anova(mod.2, type = "III")
+Anova(mod.2, type = "III")
+summary(mod.2)
 #a. no effect of treatment on output
 #b. there was an effect of number of gobies on output
 #bi. general trend seems to be, more gobies, higher reproduction, 
@@ -138,3 +139,33 @@ lineplot.CI(avg.inhab,Egg.count,group=T6.comparison,legend = TRUE,
 #   regardless of trt, and this occurs independent of trial effects;
 #   BUT, only surveyed three times, so only have data for high densities 
 #   (11-13 gobies/plot), so that could be why we don't see a big difference
+
+#model to see how reproduction increased with avg. inhabitants
+mod.ai<-lm(Egg.count~avg.inhab, data=repro)
+hist(resid(mod.ai))
+qqnorm(resid(mod.ai))
+qqline(resid(mod.ai))
+anova(mod.ai)
+Anova(mod.ai)
+summary(mod.ai)
+
+#these stats are already included in the table for egg counts, more or less
+
+#calculating averages per treatment to put in text
+
+egg.means<-with(repro, aggregate((Egg.count), list(Treatment=Treatment), mean))
+egg.means
+
+#calculating differences
+#low > med = 15% more eggs in low than medium
+8011.200/6993.857 #1.15
+6993.857*0.15 #1049.08
+6993.857+1049.08 #8042.9 (slightly off, but that's due to rounding)
+
+#low > high = 26% more eggs in low than high
+8011.200/6361.225 #1.26
+
+#med > high = 10% more eggs in med than high
+6993.857/6361.225 #1.10
+
+
