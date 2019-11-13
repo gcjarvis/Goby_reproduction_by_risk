@@ -64,7 +64,7 @@ dev.off()
 png("Output/2019.11.10.test.300dpi.12x4.egg.no.round.png", width = 12, height = 4, units = 'in', res = 300)
 #taller figure to see the distinction in recollections
 png("Output/2019.11.10.egg.10x6.300dpi.egg.rounded.png", width = 9, height = 5, units = 'in', res = 300)
-png("Output/2019.11.10.egg.9.5x5.5.300dpi.egg.rounded.png", width = 9.5, height = 5.5, units = 'in', res = 300)
+png("Output/2019.11.12.treatments.ordered.egg.9.5x5.5.300dpi.egg.rounded.png", width = 9.5, height = 5.5, units = 'in', res = 300)
 
 #building from the bottom, not including shape by treatment
 anc1<-ggplot(repro, aes(avg.inhab, Egg.count, shape=Treatment, linetype=Treatment, col=Treatment)) +
