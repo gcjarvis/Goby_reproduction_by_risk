@@ -40,7 +40,7 @@ reco.plot<- ggplot(reco.means, aes(x=Treatment, y=x, fill=Treatment)) +
         axis.text.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))) +
   theme(legend.text=element_text(size=18)) +
   theme(legend.title =element_text(size=20))+
-  theme(axis.ticks.x = element_blank()) + scale_y_continuous(expand = c(0,0),limits = c(0,6.5))
+  theme(axis.ticks.x = element_blank()) + scale_y_continuous(expand = c(0,0),limits = c(0,6.1))
 reco.plot + geom_linerange(aes(ymin=x-se, ymax=x+se), size=0.5,   
                            position=position_dodge(.85)) + theme(text = element_text(family="Arial"))
 #not sure why it's off the x axis now...has something to do with breaks

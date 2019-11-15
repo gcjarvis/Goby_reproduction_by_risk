@@ -48,6 +48,10 @@ reco.plot + geom_linerange(aes(ymin=x-se, ymax=x+se), size=0.5,
 #not sure why it's off the x axis now...has something to do with breaks
 dev.off()
 
+#this was the only behavior with a sig. trt. effect
+#so it's likely the only one I will report percentages for in text
+
+
 #total distance moved####
 td<-with(behave, aggregate((total.dist.moved), list(Treatment=Treatment), mean))
 td$se<-with(behave, aggregate((total.dist.moved), list(Treatment=Treatment), 
