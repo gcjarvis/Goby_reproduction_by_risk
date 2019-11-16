@@ -11,7 +11,17 @@ library(ggplot2)
 
 #read data
 reco<-read.csv("Data/2019.10.8.recollection.data.csv", na.strings = "")
+#adding column for survivorship, dividing counts by 20 (initial number of fish on reefs)
+reco$Survivorship<-reco$Count/20
+#ordering treatments
+reco$Treatment<-ordered(reco$Treatment,levels=c("Low","Medium","High"))
+reco.means$Treatment<-ordered(reco.means$Treatment,levels=c("Low","Medium","High"))
 
+#plotted survival in two different ways: 
+# 1. with raw counts
+# 2. with survivorship as a proportion
+
+#plotting with raw counts####
 reco.means<-with(reco, aggregate((Count), list(Treatment=Treatment), mean))
 #reco.means
 #now apply the se function to the 4th column [,3]
@@ -43,5 +53,33 @@ reco.plot<- ggplot(reco.means, aes(x=Treatment, y=x, fill=Treatment)) +
   theme(axis.ticks.x = element_blank()) + scale_y_continuous(expand = c(0,0),limits = c(0,6.1))
 reco.plot + geom_linerange(aes(ymin=x-se, ymax=x+se), size=0.5,   
                            position=position_dodge(.85)) + theme(text = element_text(family="Arial"))
-#not sure why it's off the x axis now...has something to do with breaks
+dev.off()
+
+#plotting with survivorship####
+
+#df for plotting
+survival<-with(reco, aggregate((Survivorship), list(Treatment=Treatment), mean))
+survival$se<-with(reco, aggregate((Survivorship), list(Treatment=Treatment), function(x) sd(x)/sqrt(length(x))))[,2]
+
+png("Output/2019.11.17.survivorship.6.5x5.5.300dpi.png", width = 6.5, height = 5.5, units = 'in', res = 300)
+
+reco.plot<- ggplot(survival, aes(x=Treatment, y=x, fill=Treatment)) +
+  geom_bar(stat="identity", colour= "black", width = 0.5, position="dodge")+ 
+  scale_x_discrete(limits=c("Low","Medium","High"))+
+  theme_classic() + 
+  labs(x="Risk Treatment", y="Survivorship") +
+  theme(legend.position="none") + 
+  scale_fill_manual(values=c("grey", "grey", "grey")) +
+  theme(axis.text.x=element_text(size=20, colour="black"),
+        axis.text.y=element_text(size=20, colour="black"), 
+        axis.title=element_text(size=20))+
+  theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0)), 
+        axis.title.x = element_text(margin = margin(t = 12, r = 0, b = 0, l = 0)), 
+        axis.text.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))) +
+  theme(legend.text=element_text(size=18)) +
+  theme(legend.title =element_text(size=20))+
+  theme(axis.ticks.x = element_blank()) + scale_y_continuous(expand = c(0,0),limits = c(0,0.31),
+                                                      labels = scales::number_format(accuracy = 0.01))
+reco.plot + geom_linerange(aes(ymin=x-se, ymax=x+se), size=0.5,   
+                           position=position_dodge(.85)) + theme(text = element_text(family="Arial"))
 dev.off()
