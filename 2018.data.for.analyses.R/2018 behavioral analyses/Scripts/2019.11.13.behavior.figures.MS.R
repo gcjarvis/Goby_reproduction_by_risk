@@ -115,9 +115,17 @@ png("Output/2019.11.14.movement.swims.with.rate.parentheses.9.5x5.5.300dpi.png",
 reco.plot<- ggplot(mm, aes(x=Treatment, y=x, fill=Treatment)) +
   geom_bar(stat="identity", colour= "black", width = 0.5, position="dodge")+ 
   scale_x_discrete(limits=c("Low","Medium","High"))+
-  theme_classic() + 
-  labs(x="Risk Treatment",y=(expression(atop("Movement Rate", 
-                                             paste((movements~min^-1))))))+
+  theme_classic() +
+  labs(x="Risk Treatment", y= expression('Movement Rate (movements min '^-1*')'))+
+#expression('Frequency 
+#(364 days)' ^ -1))+
+#         (expression("Movement Rate", 
+#                                                paste((movements~min^-1))))))
+#"Survival 
+#  (gobies recollected per reef)") +
+  
+#labs(x="Risk Treatment",y=(expression(atop("Movement Rate", 
+#                                            paste((movements~min^-1))))))+
   theme(legend.position="none") + 
   scale_fill_manual(values=c("grey", "grey", "grey")) +
   theme(axis.text.x=element_text(size=20, colour="black"),
@@ -133,7 +141,7 @@ reco.plot<- ggplot(mm, aes(x=Treatment, y=x, fill=Treatment)) +
 reco.plot + geom_linerange(aes(ymin=x-se, ymax=x+se), size=0.5,   
                            position=position_dodge(.85)) + theme(text = element_text(family="Arial"))
 
-dev.off()
+dev.off() #so close!
 
 #foraging rate (bites per minute)####
 fr<-with(behave, aggregate((bites.min), list(Treatment=Treatment), mean))
