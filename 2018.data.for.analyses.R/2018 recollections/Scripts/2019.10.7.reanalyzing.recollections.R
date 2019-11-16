@@ -39,7 +39,8 @@ library(agricolae)#for tukey post-hoc test
 #also includes a column ("T6.comparison") where uncaged and high are separated
 reco<-read.csv("Data/2019.10.8.recollection.data.csv", na.strings = "")
 reco<-read.csv("Data/2019.10.8.recollection.data.csv")
-
+#adding a column for survivorship (proportion of initial population recollected)
+reco$Survivorship<-reco$Count/20
 #subsetting T6 only for comparison
 reco.T6<-reco[c(91:110),c(1:6)]
 
@@ -73,7 +74,7 @@ anova(mod.1fp)
 Anova(mod.1fp)
 #looks better for assumptions, but the results are the same: no diff among trt's
 
-#mixed model, normal distribution
+#mixed model, normal distribution, used in MS
 mod.1<-lmer(Count ~ Treatment + (1|Trial), data=reco)
 hist(resid(mod.1))
 qqnorm(resid(mod.1))
@@ -82,6 +83,20 @@ anova(mod.1)
 Anova(mod.1)
 #looks pretty good to me, no difference in the number of fish recollected, when
 # high and uncaged are combined and comapred among all trials
+
+#same model, but now with survivorship, instead of raw counts
+mod.1s<-lmer(Survivorship ~ Treatment + (1|Trial), data=reco)
+hist(resid(mod.1s))
+qqnorm(resid(mod.1s))
+qqline(resid(mod.1s))
+anova(mod.1s)
+Anova(mod.1s)
+
+#results for survivorship data
+
+#Type III Analysis of Variance Table with Satterthwaite's method
+#            Sum Sq   Mean Sq NumDF  DenDF F value Pr(>F)
+#Treatment 0.011194 0.0055972     2 102.39  0.2163 0.8059
 
 #mixed model, poisson distribution, think I should go with this one
 
