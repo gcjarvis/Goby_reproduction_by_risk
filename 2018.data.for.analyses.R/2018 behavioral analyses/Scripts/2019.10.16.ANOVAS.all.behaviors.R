@@ -73,6 +73,7 @@ qqnorm(resid(mod.ex))
 qqline(resid(mod.ex))
 anova(mod.ex) # sig. effect
 Anova(mod.ex) #sig.effect
+ranova(mod.ex) #no effect of trial (this test is in the lme4 package)
 
 #a. sig effect of treatment on proportion of time exposed, not accounting for
 #   the number of fish seen on the reef at the time of the observation
