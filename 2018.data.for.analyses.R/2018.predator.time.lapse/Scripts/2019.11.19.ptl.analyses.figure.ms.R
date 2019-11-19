@@ -43,6 +43,13 @@ pred.rm
 # (i.e. where I calculated counted +/- preds for different positional bins)
 pred.rm.na<-na.omit(pred.rm)
 head(pred.rm.na)
+
+#exporting raw data, with each photo as an observation
+
+write.csv(pred.rm.na,"Data\\predator.photos.raw.csv", row.names = FALSE)
+#write.csv(Your DataFrame,"Path where you'd like to export the DataFrame\\File Name.csv", row.names = FALSE)
+
+
 View(pred.rm.na)#level of replication is photo per time-lapse per reef
 #makes sense to me, because looking at proportion of photos from each time lapse
 # that contains predators in different categories
@@ -53,6 +60,8 @@ View(pred.rm.na)#level of replication is photo per time-lapse per reef
 
 p<-with(pred.rm.na, aggregate(list(contained.pred.at.all.regardless.spp.,contianed.pred.score.4,contained.pred.score.5), 
                               list(Trial=Trial,Reef=Reef,Treatment.combo=Treatment.combo,Treatment.t6=Treatment.t6), mean))
+write.csv(p,"Data\\2019.11.20.predatr.photos.averaged.csv", row.names = FALSE)
+
 
 p
 View(p) #I think it worked, but have to rename columns in new df
@@ -85,6 +94,9 @@ library(tidyr)
 
 pl<-p %>% gather(Predator.class, Score, Present:Lethal.Threat)
 View(pl)
+#exporting in long format
+write.csv(pl,"Data\\2019.11.20.predator.photos.long.format.csv", row.names = FALSE)
+
 
 #new plot, no SEM though, not sure what SEM sciplot will use
 pl$Treatment.combo<-ordered(pl$Treatment.combo, c("Low, Medium, High"))
