@@ -8,10 +8,11 @@
 #       2) figure out the stats for PERMANOVA, and where it might have gone wrong
 #       3) plotting, and how to make grayscale
 #
-#   NOTE: I think I might have to break the data down into 3 separate analyses:
+#   NOTE: I think I might have to break the data down into 4 separate analyses:
 #       1) presence/absence among all treatments
 #       2) sublethal predation between med and HR (combined caged and uncaged)
 #       3) lethal predation is going to be present in HR, so different than 0 = statistically sig?
+#       4) high-risk caged vs. high-risk uncaged?
 # 
 #
 # Analyses: I think wide-format is best way to have df, plotting will be long format
@@ -85,12 +86,20 @@ library(tidyr)
 pl<-p %>% gather(Predator.class, Score, Present:Lethal.Threat)
 View(pl)
 
+#new plot, no SEM though, not sure what SEM sciplot will use
+pl$Treatment.combo<-ordered(pl$Treatment.combo, c("Low, Medium, High"))
+
+bargraph.CI(x.factor = Treatment.combo, response = Score, group = Predator.class, legend=TRUE, main="predator presence, prelim",x.leg = 10, data = pl)
+
+#looks similar to when I did it before
+
 #will analyze with df in wide format (p), comaparing treatments with the same 
 # achievable scores (i.e. 0-3 for all, 4 for MR and HR)
 
 # changing df for analyses#####
-
 #trying one variable at a time (presence -> sublethal -> lethal (really only applicable for T6))
+
+#predator presence (applicable for all treatments)
 p.presence<-with(pred.rm.na, aggregate((contained.pred.at.all.regardless.spp.), 
           list(Trial=Trial,Reef=Reef,Treatment.combo=Treatment.combo,Treatment.t6=Treatment.t6), mean))
 
@@ -100,7 +109,39 @@ p.presence$pse<-with(pred.rm.na, aggregate((contained.pred.at.all.regardless.spp
           list(Trial=Trial,Reef=Reef,Treatment.combo=Treatment.combo,Treatment.t6=Treatment.t6), function(x) sd(x)/sqrt(length(x))))[,5]
 View(p.presence)
 
-#selecting for just data for trial 6
+#sublethal presence (applicable for all but low risk)
+p.sublethal<-with(pred.rm.na, aggregate((contianed.pred.score.4), 
+                                       list(Trial=Trial,Reef=Reef,Treatment.combo=Treatment.combo,Treatment.t6=Treatment.t6), mean))
+
+#SEM for pred presence
+#here, each photo within a time-lapse is the unit of replication
+p.sublethal$sse<-with(pred.rm.na, aggregate((contianed.pred.score.4), 
+                                           list(Trial=Trial,Reef=Reef,Treatment.combo=Treatment.combo,Treatment.t6=Treatment.t6), function(x) sd(x)/sqrt(length(x))))[,5]
+View(p.sublethal)
+
+#lethal presence (applicable for high-risk caged, and high-risk uncaged)
+p.lethal<-with(pred.rm.na, aggregate((contained.pred.score.5), 
+                                        list(Trial=Trial,Reef=Reef,Treatment.combo=Treatment.combo,Treatment.t6=Treatment.t6), mean))
+
+#SEM for pred presence
+#here, each photo within a time-lapse is the unit of replication
+p.lethal$lse<-with(pred.rm.na, aggregate((contained.pred.score.5), 
+                                            list(Trial=Trial,Reef=Reef,Treatment.combo=Treatment.combo,Treatment.t6=Treatment.t6), function(x) sd(x)/sqrt(length(x))))[,5]
+View(p.lethal)
+
+#combining df's, not sure how I will plot this, may have to make separat plots and overlay them
+#THIS DOESN'T SEEM TO BE WORKING, DATA LOOK OFF TO ME
+p.combined<-left_join(p.presence, p.sublethal,p.lethal, by = c("Trial","Reef","Treatment.combo","Treatment.t6"))
+View(p.combined)
+#lost lethal x and se
+#trying full join instead
+p.full.join<-full_join(p.presence, p.sublethal,p.lethal, by = c("Trial","Reef","Treatment.combo","Treatment.t6"))
+
+View(p.full.join)
+
+left_join(a, b, by = "x1")
+
+#selecting trial 6 data only
 
 
 
