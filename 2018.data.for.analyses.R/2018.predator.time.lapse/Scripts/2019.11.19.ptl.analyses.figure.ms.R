@@ -1,0 +1,106 @@
+# Description: PTL analyses and figure for MS
+# Author: George C Jarvis
+# Date: Tue Nov 19 09:23:42 2019
+# Notes: Can only compare HR-caged vs. HR-uncaged within trial 6, separately
+#       Will have to do that after
+#       objectives:
+#       1) wrangle raw data into better df's 
+#       2) figure out the stats for PERMANOVA, and where it might have gone wrong
+#       3) plotting, and how to make grayscale
+#
+#   NOTE: I think I might have to break the data down into 3 separate analyses:
+#       1) presence/absence among all treatments
+#       2) sublethal predation between med and HR (combined caged and uncaged)
+#       3) lethal predation is going to be present in HR, so different than 0 = statistically sig?
+# 
+#
+# Analyses: I think wide-format is best way to have df, plotting will be long format
+#       - ****need to figure out how to get SEM, may need to break down each predator classification one at a time
+#         - instead of doing it all at once with aggregate function
+# --------------
+
+rm(list=ls())
+
+library(sciplot)
+library(lme4)
+library(car)
+library(lmerTest)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(plyr)
+library(vegan)
+library(psych)
+library(vegan)
+
+#raw data
+pred<-read.csv(file = "Data/2019.11.19.ptl.updated.data.csv")
+#removing Count.zero and Score.zero (all NA's)
+pred.rm<-subset(pred, select = -c(Count, Score))
+pred.rm
+#removing all but first row of each observation per reef  (i.e. NA's)
+# (i.e. where I calculated counted +/- preds for different positional bins)
+pred.rm.na<-na.omit(pred.rm)
+head(pred.rm.na)
+View(pred.rm.na)#level of replication is photo per time-lapse per reef
+#makes sense to me, because looking at proportion of photos from each time lapse
+# that contains predators in different categories
+
+#now want to average +/-, score of 4 (sublethal), and score of 5 (lethal),
+# by Trial, Reef, Treatment.combo, and Treatment.t6 (for t6 comparison) 
+#(dropping frame #, but will use to calc. SEM)
+
+p<-with(pred.rm.na, aggregate(list(contained.pred.at.all.regardless.spp.,contianed.pred.score.4,contained.pred.score.5), 
+                              list(Trial=Trial,Reef=Reef,Treatment.combo=Treatment.combo,Treatment.t6=Treatment.t6), mean))
+
+p
+View(p) #I think it worked, but have to rename columns in new df
+
+library(tidyverse)
+p<-as_tibble(p)
+p
+
+#viewing column names to specify which ones I want to change
+#columns correspond to following categories:
+
+colnames(p)
+
+#[presence] [4]"c.0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..1L..0L..0L.."  
+#[sublethal] [5]"c.0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L.."  
+#[lethal] [6]"c.0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L...1"
+
+#renaming columns with base R
+# Rename column names
+names(p)[names(p) == "c.0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..1L..0L..0L.."] <- "Present"
+names(p)[names(p) == "c.0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L.."] <- "Sublethal.Threat"
+names(p)[names(p) == "c.0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L...1"] <- "Lethal.Threat"
+p
+View(p)
+
+#data are now in wide format, 
+# need to reshape to long format (p-long = "pl") for plotting
+
+library(tidyr)
+
+pl<-p %>% gather(Predator.class, Score, Present:Lethal.Threat)
+View(pl)
+
+#will analyze with df in wide format (p), comaparing treatments with the same 
+# achievable scores (i.e. 0-3 for all, 4 for MR and HR)
+
+# changing df for analyses#####
+
+#trying one variable at a time (presence -> sublethal -> lethal (really only applicable for T6))
+p.presence<-with(pred.rm.na, aggregate((contained.pred.at.all.regardless.spp.), 
+          list(Trial=Trial,Reef=Reef,Treatment.combo=Treatment.combo,Treatment.t6=Treatment.t6), mean))
+
+#SEM for pred presence
+#here, each photo within a time-lapse is the unit of replication
+p.presence$pse<-with(pred.rm.na, aggregate((contained.pred.at.all.regardless.spp.), 
+          list(Trial=Trial,Reef=Reef,Treatment.combo=Treatment.combo,Treatment.t6=Treatment.t6), function(x) sd(x)/sqrt(length(x))))[,5]
+View(p.presence)
+
+#selecting for just data for trial 6
+
+
+
