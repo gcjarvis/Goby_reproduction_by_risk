@@ -1,7 +1,7 @@
 # Description: calculation for power analysis with 43% reduction in output
 # Author: George C Jarvis
 # Date: Wed Nov 20 07:46:50 2019
-# Notes: this effect size was taken from (Mukherjee et al. 2014)
+# Notes: this effect size of 43% reduction under high risk environment was taken from (Mukherjee et al. 2014)
 # --------------
 
 library(pwr)
