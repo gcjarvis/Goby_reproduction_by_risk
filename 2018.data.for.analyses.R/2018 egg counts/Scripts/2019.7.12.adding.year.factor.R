@@ -182,11 +182,11 @@ qqline(resid(mod2.1))
 anova(mod2.1)
 Anova(mod2.1)
 summary(mod2.1) # only factor that is sig. is the avg.inhab, will 
-# reduce model further to reflect fixed effects without any interactions,
+# reduce model further to reflect fixed effects with only categorical interactions,
 # will also include the random effect of trial nested within year
 
-#maybe running this reduced model
-mod2.2<-lmer(egg.week~Treatment+avg.inhab+Year.fact+(1|Year.fact:Trial),
+#running the reduced model
+mod2.2<-lmer(egg.week~Treatment*Year.fact+avg.inhab+(1|Year.fact:Trial),
              data=repro)
 hist(resid(mod2.2))
 qqnorm(resid(mod2.2))
@@ -194,6 +194,17 @@ qqline(resid(mod2.2))
 anova(mod2.2)
 Anova(mod2.2)
 summary(mod2.2) # same results, will check out a model comparison?
+
+#I don't think this is correct, it doesn't include treatment*year interaction
+#maybe running this reduced model
+#mod2.2<-lmer(egg.week~Treatment+avg.inhab+Year.fact+(1|Year.fact:Trial),
+#             data=repro)
+#hist(resid(mod2.2))
+#qqnorm(resid(mod2.2))
+#qqline(resid(mod2.2))
+#anova(mod2.2)
+#Anova(mod2.2)
+#summary(mod2.2) # same results, will check out a model comparison?
 
 #comparing new models
 anova(mod2,mod2.1,mod2.2) #mod 2.2 seems to be the best mdoel in terms of AIC
