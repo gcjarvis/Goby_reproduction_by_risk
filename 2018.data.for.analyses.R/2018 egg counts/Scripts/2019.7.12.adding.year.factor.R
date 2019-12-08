@@ -4,6 +4,8 @@
 # Notes: I'm going to add year as a fixed factor to the model and code the full model as
 #       egg count~Treatment*Year*avg.inhab+(1|Trial:Year)
 #       I have to figure out if the model is running it correctly (i.e. all of the interactions, and also the error df)
+#
+# 2019.8.12 update: go to "reproduction per week" section
 # --------------
 
 rm(list=ls())
@@ -126,3 +128,99 @@ lineplot.CI(avg.inhab,Egg.count,group=Year.fact,legend = TRUE,main="reproduction
 # avg.inhab*year stats show that there was a greater effect of avg.inhab on reproductive
 #       output in 2018 than in 2017. In fact, it doesn't seem like there was much of a difference in output by avg.inhab,
 #       which suggests that those effects manifest over time (i.e. can't see them in short (weeklong) trials)
+
+#reproduction by week (2019.8.12)####
+#converting total output to output per week to better reflect the differences
+# in the data based on the duration of the trial
+
+#CALCULATING OUTPUT/WEEK: take the output from my raw data and dividing it 
+# by the number of weeks that the trial lasted:
+#-trials 1-3 = 1 week
+#-trials 4-5 = 4 weeks
+#-trial 6 = 2 weeks (I emailed M.steele about this on 2019.8.12 to see what he though
+# about the difference in trial duration within year, but hopefully this is okay)
+
+#going to try and do this in dplyr with the conditional mutation 
+# NOTE: I rounded the egg counts to the nearest whole number, b/c non-while eggs didn't 
+# seem like a great variable
+
+repro<-repro %>%
+  mutate(egg.week = ifelse(Trial<4, Egg.count/1,
+                           ifelse(Trial == 4| Trial == 5, (ceiling(Egg.count/4)),
+                                  ifelse(Trial == 6, (ceiling(Egg.count/2)), NA))))
+#View(repro)
+#base code for future reference, NOTE, you have to name the df, or else the new variable
+# won't show up in the 
+#df1<-df %>%
+#  mutate(g = ifelse(a == 2 | a == 5 | a == 7 | (a == 1 & b == 4), 2,
+#                    ifelse(a == 0 | a == 1 | a == 4 | a == 3 |  c == 4, 3, NA)))
+
+#now want to set up the new model, including new response ("egg.year") and year
+
+#full model first, jus to check and see if stats hold up
+
+mod2<-lmer(egg.week~Treatment*avg.inhab*Year.fact+(1|Year.fact:Trial), data=repro)
+hist(resid(mod2))
+qqnorm(resid(mod2))
+qqline(resid(mod2))
+anova(mod2)
+Anova(mod2)
+summary(mod2) #only see sig. effect of avg.inhab, going to run reduced models
+
+#notes for model reduction:
+# 1. remove all nonsignificant (p>0.05) interactions with covariate
+#   -unless there is an interaction with a higher order interaction involving it.
+#   -In the case of mod2, there aren't any higher-order interactions
+# 2. keep all categorical factors and their interactions (trt., year)
+
+#going to run reduced model, minus three-way interaction
+mod2.1<-lmer(egg.week~(Treatment*avg.inhab)+(avg.inhab*Year.fact)+Treatment+
+               avg.inhab+Year.fact+(1|Year.fact:Trial), data=repro)
+hist(resid(mod2.1))
+qqnorm(resid(mod2.1))
+qqline(resid(mod2.1))
+anova(mod2.1)
+Anova(mod2.1)
+summary(mod2.1) # only factor that is sig. is the avg.inhab, will 
+# reduce model further to reflect fixed effects without any interactions,
+# will also include the random effect of trial nested within year
+
+#maybe running this reduced model
+mod2.2<-lmer(egg.week~Treatment+avg.inhab+Year.fact+(1|Year.fact:Trial),
+             data=repro)
+hist(resid(mod2.2))
+qqnorm(resid(mod2.2))
+qqline(resid(mod2.2))
+anova(mod2.2)
+Anova(mod2.2)
+summary(mod2.2) # same results, will check out a model comparison?
+
+#comparing new models
+anova(mod2,mod2.1,mod2.2) #mod 2.2 seems to be the best mdoel in terms of AIC
+
+#it's interesting that there was no effect of year on reproduction per week
+# going to look at that now
+
+#plotting with eggs per week####
+
+#ordering "Treatment" and "T.6.comparison"
+repro$Treatment.ord<-ordered(repro$Treatment, levels=c("Low","Medium","High"))
+repro$T6.comparison.ord<-ordered(repro$T6.comparison, levels=c("Low","Medium","High","Uncaged"))
+
+bargraph.CI(x.factor = Treatment.ord, response = egg.week, 
+            group= Year.fact, legend=TRUE, main="Reproduction per week between years", 
+            data = repro, ylab="egg count per reef per week")
+bargraph.CI(x.factor = Treatment.ord, response = egg.week, 
+            group= Trial, legend=TRUE, main="all trials, HR combined grouped by trial", 
+            data = repro)
+bargraph.CI(x.factor = avg.inhab, response = egg.week, 
+            group= Year.fact, legend=TRUE, main="weekly reproduction by number of gobies", 
+            xlab="avg.inhab", ylab="egg count per reef per week",
+            data = repro)
+lineplot.CI(avg.inhab,egg.week,group=Year.fact,legend = TRUE,main="reproduction by number of gobies", 
+            xlab="avg.inhab", ylab="egg count", data=repro) 
+#NOTE: re: lineplot, I went back and checked the raw data and saw that there was one 
+# reef (reef 7 in trial 3) where I recollected 11 gobies (avg.inhab=15.5, which rounds up to 16)
+# but there were no eggs laid. That's why there's a 0 value at 16 for 2017
+
+View(repro)
