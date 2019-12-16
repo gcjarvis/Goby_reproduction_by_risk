@@ -19,6 +19,8 @@ library(pwr)
 library(HH)#for ancova and plots
 library(vegan)
 
+options(contrasts = c("contr.sum","contr.poly")) #this is important, run before ANOVA, will set SS to type III
+
 #importing dataset, adding number of gobies on each reef, ordering treatments####
 repro<-read.csv("Data/new.data.2019.9.30.csv")
 repro<-na.omit(repro) # no NA's to omit
