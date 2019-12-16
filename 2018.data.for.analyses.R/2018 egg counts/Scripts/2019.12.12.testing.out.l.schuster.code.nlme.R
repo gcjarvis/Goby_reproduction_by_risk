@@ -73,3 +73,25 @@ anova(mod2.2.luk, type='marginal')
 anova(mod2.luk,mod2.1.luk,mod2.2.luk) #aic value is highest for the least-reduced model, but 
 # also might not be meaningful because I'm comparing models with different fixed effects
 
+#I'm skeptical that my nested factor isn't being considered correctly in R
+#I'm going to rerun the reduced model (mod2.2.luk) in nlme, and this time specify the nested term,
+# - as opposed to "random=~1|Trial", where it's assumed that trial is nested within year
+#best case scenario, I get the same output, in which case I think I'd feel better about nesting explicitly
+
+mod2.3.luk<-lme(egg.week~(Treatment*Year.fact)+ Treatment+
+                  avg.inhab+Year.fact,random=~1|Year.fact/Trial,repro,method="REML")
+summary(mod2.3.luk)
+anova(mod2.3.luk, type='marginal') #NaNs produced, R doesn't like it
+
+# lme(Thickness ~ 1, random= ~1 | Lot/Wafer, data=Oxide) 
+
+#will try another way
+
+mod2.4.luk<-lme(egg.week~(Treatment*Year.fact)+ Treatment+
+                  avg.inhab+Year.fact,random= 
+                  list(~1|Year.fact,~1|Trial),repro,method="REML")
+summary(mod2.4.luk)
+anova(mod2.4.luk, type='marginal') #NaNs as well, not sure if I'll be able to specify
+
+# lme(Thickness ~ 1, random=list(~1|Lot, ~1|Wafer), data=Oxide)
+
