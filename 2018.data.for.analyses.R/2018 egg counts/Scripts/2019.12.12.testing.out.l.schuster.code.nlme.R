@@ -73,6 +73,7 @@ anova(mod2.2.luk, type='marginal')
 anova(mod2.luk,mod2.1.luk,mod2.2.luk) #aic value is highest for the least-reduced model, but 
 # also might not be meaningful because I'm comparing models with different fixed effects
 
+#NOTE: this doesn't seem to work...
 #I'm skeptical that my nested factor isn't being considered correctly in R
 #I'm going to rerun the reduced model (mod2.2.luk) in nlme, and this time specify the nested term,
 # - as opposed to "random=~1|Trial", where it's assumed that trial is nested within year
@@ -95,3 +96,46 @@ anova(mod2.4.luk, type='marginal') #NaNs as well, not sure if I'll be able to sp
 
 # lme(Thickness ~ 1, random=list(~1|Lot, ~1|Wafer), data=Oxide)
 
+#Arithmetic vs. LS means (takes model means into account)####
+if(!require(FSA)){install.packages("FSA")}
+if(!require(psych)){install.packages("psych")}
+if(!require(lsmeans)){install.packages("lsmeans")}
+if(!require(car)){install.packages("car")}
+
+library(FSA) #arithmetic means
+library(psych)
+library(lsmeans)
+library(car)
+
+#arithmetic means
+library(FSA)
+
+Summarize(egg.week~Treatment,
+          data=repro,
+          digits=3)
+#nice, because it gives sample sizes for each treatment
+
+#Summarize(Height ~ Classroom,
+#          data=Data,
+#          digits=3)
+
+#LS means, taking model into consideration
+mod2.2.luk<-lme(egg.week~(Treatment*Year.fact)+ Treatment+
+                  avg.inhab+Year.fact,random=~1|Trial,repro,method="REML")
+library(lsmeans)
+
+lsmeans(mod2.2.luk,
+        pairwise~Treatment,
+        adjust="tukey") #gives warning that results may be misleading 
+#                         because of interactions
+
+#the lsmeans are not too different from the arithmetic means
+
+#model = lm(Height ~ Classroom + Sex + Classroom:Sex,
+#           data = Data)
+
+#library(lsmeans)
+
+#lsmeans(model,
+#        pairwise ~ Classroom,
+#        adjust="tukey")
