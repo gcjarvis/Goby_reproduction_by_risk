@@ -40,6 +40,9 @@ repro<-repro %>%
                            ifelse(Trial == 4| Trial == 5, (ceiling(Egg.count/4)),
                                   ifelse(Trial == 6, (ceiling(Egg.count/2)), NA))))
 
+#exporting wrangled data
+write.csv(repro,"Data\\egg.counts.2019.12.23.csv", row.names = FALSE)
+
 
 #modeling####
 #original model with lme4, with weekly output per reef as response variable, shown is the reduced model 
