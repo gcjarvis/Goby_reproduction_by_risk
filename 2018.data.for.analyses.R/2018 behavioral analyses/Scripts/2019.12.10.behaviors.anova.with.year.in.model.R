@@ -27,6 +27,11 @@ library(car)#type III SS
 #library(jmv)
 library(agricolae)#can't use standard tukey test for mixed models
 library(multcomp)# post-hoc for fixed effects in mixed model
+library(nlme)
+library(lsmeans)#for running LS adjusted means for comparisons
+
+options(contrasts = c("contr.sum","contr.poly")) #this is important, run before ANOVA, will set SS to type III
+
 
 #loading df####
 behave<-read.csv("Data/2019.10.25.behavior.includes.recollections.csv")
@@ -81,6 +86,49 @@ summary(glht(pe1, linfct=mcp(Treatment="Tukey")))
 summary(glht(pe1.1, linfct=mcp(Treatment="Tukey")))
 summary(glht(pe1.2, linfct=mcp(Treatment="Tukey")))
 
+#incorporating new nlme model
+
+#running full model to make sure the reduced morel is correct
+pe1.3.0<-lme(proportion.exposed~Treatment*Year.fact*avg.inhab,
+           random=~1|Trial, behave, method = "REML")
+hist(resid(pe1.3.0))#looks like a slightly better model in terms of assumptions
+qqnorm(resid(pe1.3.0))
+qqline(resid(pe1.3.0))
+anova(pe1.3.0)
+
+#reducing model
+
+pe1.3<-lme(proportion.exposed~Treatment+(Treatment*Year.fact)+
+              Year.fact,random=~1|Trial, behave, method = "REML")
+hist(resid(pe1.3))#looks like a slightly better model in terms of assumptions
+qqnorm(resid(pe1.3))
+qqline(resid(pe1.3))
+anova(pe1.3)#type III anova = sig. treatment effect with ANOVA (III)
+
+#avg.inhab isn't a factor either, so remiving that from the model
+
+pe1.3.1<-lme(proportion.exposed~Treatment*Year.fact,
+             random=~1|Trial, behave, method = "REML")
+hist(resid(pe1.3.1))#looks like a slightly better model in terms of assumptions
+qqnorm(resid(pe1.3.1))
+qqline(resid(pe1.3.1))
+anova(pe1.3.1)#type III anova = sig. treatment effect with ANOVA (III)
+
+
+#now doing contrasts by treatment
+
+#arithmetic means
+library(FSA)
+
+Summarize(proportion.exposed~Treatment,
+          data=behave,
+          digits=3)
+
+#LS-adjusted means
+lsmeans(pe1.3.1,
+        pairwise~Treatment,
+        adjust="tukey")
+
 #plotting
 #ordering "Treatment" and "T.6.comparison"
 behave$Treatment.ord<-ordered(behave$Treatment, levels=c("Low","Medium","High"))
@@ -131,6 +179,50 @@ anova(mm1.2)#type III anova = sig. treatment effect with ANOVA (III)
 Anova(mm1.2)#Analysis of deviance, type II wald test = sig. trt. effect,
 #                                                     no density, no interactive
 summary(mm1.2)
+
+#incorporating new nlme model
+
+#running full model to make sure the reduced morel is correct
+mm1.3.0<-lme(movements.min~Treatment*Year.fact*avg.inhab,
+             random=~1|Trial, behave, method = "REML")
+hist(resid(mm1.3.0))#looks like a slightly better model in terms of assumptions
+qqnorm(resid(mm1.3.0))
+qqline(resid(mm1.3.0))
+anova(mm1.3.0)
+
+#nothing significant, reducing model
+
+mm1.3<-lme(movements.min~Treatment+(Treatment*Year.fact)+
+             Year.fact,random=~1|Trial, behave, method = "REML")
+hist(resid(mm1.3))#looks like a slightly better model in terms of assumptions
+qqnorm(resid(mm1.3))
+qqline(resid(mm1.3))
+anova(mm1.3)#type III anova = sig. treatment effect with ANOVA (III)
+
+#avg.inhab isn't a factor either, so removing that from the model (same model as before)
+
+mm1.3.1<-lme(movements.min~Treatment*Year.fact,
+             random=~1|Trial, behave, method = "REML")
+hist(resid(mm1.3.1))#looks like a slightly better model in terms of assumptions
+qqnorm(resid(mm1.3.1))
+qqline(resid(mm1.3.1))
+anova(mm1.3.1)#type III anova = sig. treatment effect with ANOVA (III)
+
+#no differences, no need to do contrasts by treatment
+
+#now doing contrasts by treatment
+
+#arithmetic means
+library(FSA)
+
+Summarize(movements.min~Treatment,
+          data=behave,
+          digits=3)
+
+#LS-adjusted means
+lsmeans(mm1.3,
+        pairwise~Treatment,
+        adjust="tukey")
 
 #plotting
 #ordering "Treatment" and "T.6.comparison"
@@ -190,6 +282,48 @@ anova(br1.2)#type III anova = sig. treatment effect with ANOVA (III)
 Anova(br1.2)#Analysis of deviance, type II wald test = sig. trt. effect,
 #                                                     no density, no interactive
 summary(br1.2)
+
+#incorporating new nlme model
+
+#running full model to make sure the reduced morel is correct
+br1.3.0<-lme(bites.min~Treatment*Year.fact*avg.inhab,
+             random=~1|Trial, behave, method = "REML")
+hist(resid(br1.3.0))#looks like a slightly better model in terms of assumptions
+qqnorm(resid(br1.3.0))
+qqline(resid(br1.3.0))
+anova(br1.3.0)
+
+#reducing model
+
+br1.3<-lme(bites.min~Treatment+(Treatment*Year.fact)+
+             Year.fact,random=~1|Trial, behave, method = "REML")
+hist(resid(br1.3))#looks like a slightly better model in terms of assumptions
+qqnorm(resid(br1.3))
+qqline(resid(br1.3))
+anova(br1.3)#type III anova = sig. treatment effect with ANOVA (III)
+
+#avg.inhab isn't a factor either, so remiving that from the model
+
+br1.3.1<-lme(proportion.exposed~Treatment*Year.fact,
+             random=~1|Trial, behave, method = "REML")
+hist(resid(br1.3.1))#looks like a slightly better model in terms of assumptions
+qqnorm(resid(br1.3.1))
+qqline(resid(br1.3.1))
+anova(br1.3.1)#type III anova = sig. treatment effect with ANOVA (III)
+
+#now doing contrasts by treatment
+
+#arithmetic means
+library(FSA)
+
+Summarize(bites.min~Treatment,
+          data=behave,
+          digits=3)
+
+#LS-adjusted means
+lsmeans(br1.3.1,
+        pairwise~Treatment,
+        adjust="tukey")
 
 #plotting
 #ordering "Treatment" and "T.6.comparison"
@@ -251,6 +385,49 @@ Anova(dm1.2)#Chi square (same as above) = sig. avg inhab, no sig. trt. effect (p
 # I suppose I'd be more comfortable with the Chi square result, based on the previous models
 summary(dm1.2)
 
+#incorporating new nlme model
+
+#running full model to make sure the reduced morel is correct
+dm1.3.0<-lme(total.dist.moved~Treatment*Year.fact*avg.inhab,
+             random=~1|Trial, behave, method = "REML")
+hist(resid(dm1.3.0))#looks like a slightly better model in terms of assumptions
+qqnorm(resid(dm1.3.0))
+qqline(resid(dm1.3.0))
+anova(dm1.3.0)
+
+#reducing model, leaving avg.inhab in, because effect of covariate is sig.
+# - will have to make new figure for linear distance moved to see how it changes
+# -- with the number of inhabitants on each reef
+
+dm1.3<-lme(total.dist.moved~Treatment+(Treatment*Year.fact)+
+             Year.fact+avg.inhab,random=~1|Trial, behave, method = "REML")
+hist(resid(dm1.3))#looks like a slightly better model in terms of assumptions
+qqnorm(resid(dm1.3))
+qqline(resid(dm1.3))
+anova(dm1.3)#type III anova = sig. treatment effect with ANOVA (III)
+
+#now doing contrasts by treatment
+
+#arithmetic means
+library(FSA)
+
+Summarize(total.dist.moved~Treatment,
+          data=behave,
+          digits=3)
+
+#LS-adjusted means
+
+#what happens if I make avg.inhab a factor?
+behave$avg.inhab.fact<-as.factor(behave$avg.inhab)#this isn't the way to do it, 
+# - but wanted to see how avg.inhab as a factor might look 
+# it's not the right way, because then avg.inhab has 9 df, which isn't correct for
+# - a covariate
+
+
+lsmeans(dm1.3,
+        pairwise~Treatment*avg.inhab,
+        adjust="tukey")
+
 #plotting
 #ordering "Treatment" and "T.6.comparison"
 behave$Treatment.ord<-ordered(behave$Treatment, levels=c("Low","Medium","High"))
@@ -274,6 +451,19 @@ bargraph.CI(x.factor = Treatment.ord, response = total.dist.moved,
 bargraph.CI(x.factor = avg.inhab, response = total.dist.moved, 
             group= Year.fact, legend=TRUE, main="distance moved, by inhab and year", 
             xlab= "avg.inhab",data = behave)
+
+#looking at average inhab effect as a barplot
+bargraph.CI(x.factor = avg.inhab, response = total.dist.moved, 
+            group = Treatment.ord,legend=TRUE, main="distance moved, by inhab and year", 
+            xlab= "avg.inhab",data = behave)
+
+#looking at average inhab effect as barplot, grouped by treatment
+lineplot.CI(avg.inhab,total.dist.moved,group=Treatment.ord,legend = TRUE,
+            main="total dist moved x avg.inhab x trt", xlab="avg.inhab", 
+            ylab="total dist moved", data=behave)
+
+#looks like there were differences by number of inhabs, 
+# - but that effect did not differ among treatments
 
 #courtship rate####
 cr1<-lmer(courtship.min~Treatment*avg.inhab*Year.fact+(1|Year.fact:Trial), data=behave)
@@ -304,6 +494,48 @@ anova(cr1.2)#type III anova = sig. inhab effect, nearly a treatment effect (p = 
 Anova(cr1.2)#Chi square (same as above) = sig. avg inhab, no sig. trt. effect (p = 0.083)
 # I suppose I'd be more comfortable with the Chi square result, based on the previous models
 summary(cr1.2)
+
+#incorporating new nlme model
+
+#running full model to make sure the reduced morel is correct
+cr1.3.0<-lme(courtship.min~Treatment*Year.fact*avg.inhab,
+             random=~1|Trial, behave, method = "REML")
+hist(resid(cr1.3.0))#looks like a slightly better model in terms of assumptions
+qqnorm(resid(cr1.3.0))
+qqline(resid(cr1.3.0))
+anova(cr1.3.0)
+
+#reducing model
+
+cr1.3<-lme(courtship.min~Treatment+(Treatment*Year.fact)+
+             Year.fact+avg.inhab,random=~1|Trial, behave, method = "REML")
+hist(resid(cr1.3))#looks like a slightly better model in terms of assumptions
+qqnorm(resid(cr1.3))
+qqline(resid(cr1.3))
+anova(cr1.3)#type III anova = sig. treatment effect with ANOVA (III)
+
+#avg.inhab isn't sig., so remiving that from the model
+
+cr1.3.1<-lme(courtship.min~Treatment*Year.fact,
+             random=~1|Trial, behave, method = "REML")
+hist(resid(cr1.3.1))#looks like a slightly better model in terms of assumptions
+qqnorm(resid(cr1.3.1))
+qqline(resid(cr1.3.1))
+anova(cr1.3.1)#type III anova = sig. treatment effect with ANOVA (III)
+
+#now doing contrasts by treatment
+
+#arithmetic means
+library(FSA)
+
+Summarize(courtship.min~Treatment,
+          data=behave,
+          digits=3)
+
+#LS-adjusted means
+lsmeans(cr1.3.1,
+        pairwise~Treatment,
+        adjust="tukey")
 
 #plotting
 #ordering "Treatment" and "T.6.comparison"

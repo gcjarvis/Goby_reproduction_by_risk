@@ -128,7 +128,7 @@ mod2.2.luk<-lme(egg.week~(Treatment*Year.fact)+ Treatment+
 library(lsmeans)
 
 lsmeans(mod2.2.luk,
-        pairwise~Treatment,
+        pairwise~Treatment*avg.inhab,
         adjust="tukey") #gives warning that results may be misleading 
 #                         because of interactions
 
