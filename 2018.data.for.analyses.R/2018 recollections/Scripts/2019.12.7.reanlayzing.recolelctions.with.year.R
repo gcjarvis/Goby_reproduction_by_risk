@@ -17,6 +17,8 @@ library(ggplot2)
 library(MASS)
 library(nlme)
 
+options(contrasts = c("contr.sum","contr.poly")) #this is important, run before ANOVA, will set SS to type III
+
 #read data
 reco<-read.csv("Data/2019.10.8.recollection.data.csv")
 reco<-na.omit(reco)
@@ -54,6 +56,22 @@ anova(mod2)
 Anova(mod2)
 summary(mod2) #no differences in either categorical factor, or interaction
 ranef(mod2)
+
+#using nlme package to model recollections
+mod2.2.luk<-lme(Survivorship~Treatment*Year.fact,random=~1|Trial,reco,method="REML")
+hist(resid(mod2.2.luk))
+qqnorm(resid(mod2.2.luk))
+qqline(resid(mod2.2.luk))
+summary(mod2.2.luk)
+anova(mod2.2.luk, type='marginal')
+
+#arithmetic means for comparison and ss
+library(FSA)
+
+Summarize(Survivorship~Treatment,
+          data=reco,
+          digits=3)
+
 
 #plotting####
 #ordering treatments
