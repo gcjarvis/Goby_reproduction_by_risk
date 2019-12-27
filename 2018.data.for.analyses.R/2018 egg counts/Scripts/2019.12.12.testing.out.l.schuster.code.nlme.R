@@ -142,3 +142,16 @@ lsmeans(mod2.2.luk,
 #lsmeans(model,
 #        pairwise ~ Classroom,
 #        adjust="tukey")
+#
+#testing trial as a fixed effect####
+#not sure it makes sense to run it this way
+mod3.t<-lm(egg.week~Treatment*Year.fact*Trial*avg.inhab,repro)
+anova(mod3.t)
+
+#trial had an effect, want to see graphically
+repro$treatment.ordered<-ordered(repro$Treatment, levels=c("Low","Medium","High"))
+#reproduction by treatment
+bargraph.CI(x.factor = avg.inhab, response = egg.week, group = Trial,
+            legend=TRUE, main="reproduction per avg.inhab", 
+            data = repro)
+
