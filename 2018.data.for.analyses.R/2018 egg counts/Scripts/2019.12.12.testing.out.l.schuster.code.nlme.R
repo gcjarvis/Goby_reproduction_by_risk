@@ -18,6 +18,7 @@ library(nlme)
 library(pwr)
 library(HH)#for ancova and plots
 library(vegan)
+library(multcomp)
 
 options(contrasts = c("contr.sum","contr.poly")) #this is important, run before ANOVA, will set SS to type III
 
@@ -155,3 +156,20 @@ bargraph.CI(x.factor = avg.inhab, response = egg.week, group = Trial,
             legend=TRUE, main="reproduction per avg.inhab", 
             data = repro)
 
+#citations for nlme package and maybe multcomp, 
+# - though I'm not sure I want to do multiple comparisons with my models
+# - but I doubt I'll get much kickback from reviewers for using that
+
+#let's try multcomp package with my new models (nlme)###
+citation(package = "nlme")
+citation(package="multcomp")
+
+#running multcomp with lme model for egg counts
+
+#summary(glht(YOUR MODEL, linfct=mcp(YOUR FIXED FACTOR="Tukey")))
+#not sure how I feel about that
+summary(glht(mod2.2.luk, linfct=mcp(Treatment="Tukey")))
+
+# I don't think I have to do this, because I'm not doing post-hoc tests
+# I'm just going to say that there were overall differences when there were,
+# - and which factors in the model contributed to those differences
