@@ -126,6 +126,19 @@ Summarize(egg.week~Treatment,
 #LS means, taking model into consideration
 mod2.2.luk<-lme(egg.week~(Treatment*Year.fact)+ Treatment+
                   avg.inhab+Year.fact,random=~1|Trial,repro,method="REML")
+
+#making sure that the factor is nesting correctly, found code from here
+# - https://stat.ethz.ch/pipermail/r-sig-mixed-models/2013q3/020645.html
+# I got the same results when I ran it this way, so I'm assuming that R
+# - is nesting Trial within year.fact properly
+mod2.2.1.luk<-lme(fixed= egg.week~(Treatment*Year.fact)+ Treatment+
+                avg.inhab+Year.fact,random=~1|Trial,
+                weights = varIdent((form=~1|Year.fact)) ,repro,method="REML")
+
+
+summary(mod2.2.1.luk)
+anova(mod2.2.1.luk, type='marginal')
+
 library(lsmeans)
 
 lsmeans(mod2.2.luk,
@@ -163,6 +176,7 @@ bargraph.CI(x.factor = avg.inhab, response = egg.week, group = Trial,
 #let's try multcomp package with my new models (nlme)###
 citation(package = "nlme")
 citation(package="multcomp")
+citation(package="lsmeans")
 
 #running multcomp with lme model for egg counts
 
