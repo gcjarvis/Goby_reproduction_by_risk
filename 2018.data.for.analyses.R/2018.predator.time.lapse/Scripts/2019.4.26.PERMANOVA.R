@@ -24,6 +24,7 @@ library(vegan)
 #old df ptl<-read.csv("Data/2019.3.19.ptl.csv")
 #new df as of 2019.4.26
 ptl<-read.csv("Data/2019.4.26a.ptl.csv")
+View(ptl)
 #arranging by treatment for PERMANOVA + PermDisp
 ptl<-arrange(ptl, Treatment)
 View(ptl)
