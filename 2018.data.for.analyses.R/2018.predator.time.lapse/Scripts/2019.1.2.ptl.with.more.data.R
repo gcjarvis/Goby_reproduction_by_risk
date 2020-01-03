@@ -10,6 +10,7 @@
 
 rm(list=ls())
 
+#packages####
 library(sciplot)
 library(lme4)
 library(car)
@@ -21,9 +22,13 @@ library(nlme)
 library(pwr)
 library(vegan)
 library(multcomp)
+library(tidyverse)
+library(tidyr)
+library(qpcR)#for cbind.na
 
 options(contrasts = c("contr.sum","contr.poly")) #this is important, run before ANOVA, will set SS to type III
 
+#importing data####
 #raw data
 pred<-read.csv(file = "Data/2019.1.2.ptl.raw.data.csv")
 View(pred)
@@ -33,6 +38,7 @@ head(pred.rm.na)
 
 #exporting raw data, with each photo within a reef as an observation (n=10 photos minimum)
 
+# These are the data in wide format
 write.csv(pred.rm.na,"Data\\2019.1.2.predator.raw.data.csv", row.names = FALSE)
 #write.csv(Your DataFrame,"Path where you'd like to export the DataFrame\\File Name.csv", row.names = FALSE)
 
@@ -40,49 +46,89 @@ View(pred.rm.na)#level of replication is photo per time-lapse per reef
 #makes sense to me, because looking at proportion of photos from each time lapse
 # that contains predators in different categories
 
-#now want to average +/-, score of 4 (sublethal), and score of 5 (lethal),
-# by Trial, Reef, Treatment.combo, and Treatment.t6 (for t6 comparison) 
-#(dropping frame #, but will use to calc. SEM)
+#importing egg count data for avg. number of gobies inhabiting each reef
+# Will add this to the data when I wrangle them into wide format
+repro<-read.csv(file= "Data/egg.counts.2019.12.23.csv")
 
-p<-with(pred.rm.na, aggregate(list(contained.pred.at.all.regardless.spp.,contianed.pred.score.4,contained.pred.score.5), 
-                              list(Trial=Trial,Reef=Reef,Treatment.combo=Treatment.combo,Treatment.t6=Treatment.t6), mean))
-write.csv(p,"Data\\2019.11.20.predatr.photos.averaged.csv", row.names = FALSE)
+#data wrangling####
 
+#wide format (for analyses)####
 
-p
-View(p) #I think it worked, but have to rename columns in new df
+# want the proportion of photos per reef +/- predators, 
+# - predators close enough to be a sublethal threat, 
+# - and predators close enough to be a lethal threat
 
-library(tidyverse)
-p<-as_tibble(p)
-p
+# Grouping by Trial, Reef, Treatment.combo, and Treatment.t6 (for t6 comparison) 
+# Read number is the level of observation
+# Each reef is a replicate, so that is what will be used to calculate means and SEM
+
+p<-with(pred.rm.na, aggregate(list(contained.pred,sublethal.threat,lethal.threat), 
+                    list(Trial=Trial,Reef=Reef,Treatment=Treatment,
+                         T6.comparison=T6.comparison), mean))
+View(p)
+
+#Column names are not correct, need to change them
 
 #viewing column names to specify which ones I want to change
 #columns correspond to following categories:
 
 colnames(p)
 
-#[presence] [4]"c.0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..1L..0L..0L.."  
-#[sublethal] [5]"c.0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L.."  
-#[lethal] [6]"c.0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L...1"
+#[presence] [5]"c.0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..1L..0L..0L.."  
+#[sublethal] [6]"c.0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L.."  
+#[lethal] [7]"c.0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L...1"
 
 #renaming columns with base R
 # Rename column names
-names(p)[names(p) == "c.0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..1L..0L..0L.."] <- "Present"
+names(p)[names(p) == "c.0L..0L..1L..0L..1L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L.."] <- "Present"
 names(p)[names(p) == "c.0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L.."] <- "Sublethal.Threat"
 names(p)[names(p) == "c.0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L...1"] <- "Lethal.Threat"
 p
 View(p)
 
-#data are now in wide format, 
-# need to reshape to long format (p-long = "pl") for plotting
+#want to bring in avg. numer of gobies inhabiting each reef as well, adding it to "p" df
+#bringing in egg count data, so I can assign avg.inhab variable to the corresponding rows in my p df
+# - There are uneven #'s of rows between the two df's, so I'll see what happens with that
 
-library(tidyr)
+pr<-left_join(p,repro,by=c("Trial","Reef","Treatment","T6.comparison"))
+View(pr)
 
-pl<-p %>% gather(Predator.class, Score, Present:Lethal.Threat)
+#want to drop unnecessary columns from repro df, i.e. everything but avg.inhab
+# they are columns 8:12 and 14:16
+pr1<-pr[-c(8:12,14:16)]
+View(pr1)
+
+# this looks good to me, checked with repro data to make sure avg.inhab values were correct
+
+#exporting data in wide format
+write.csv(pr1,"Data\\2019.1.3.predator.data.wide.format.with.avg.inhab.csv", row.names = FALSE)
+
+# pr1 contains the data to be used in the analyses for ptl
+
+#long format for plotting#### 
+# p-long = "pl"
+
+pr1<-as_tibble(pr1)
+pr1
+
+pl<-pr1 %>% gather(Predator.class, Score, Present:Lethal.Threat)
 View(pl)
 #exporting in long format
-write.csv(pl,"Data\\2019.11.20.predator.photos.long.format.csv", row.names = FALSE)
+write.csv(pl,"Data\\2019.1.3.predator.data.long.format.with avg.inhab.csv", row.names = FALSE)
 
+#analyses####
+
+#using df "pr1" --> predator data in wide format
+
+
+#all trials
+#going to evaluate predator activity with nested factor of trial - bring in avg.inhab? 
+# It might be compelling to bring that in, considering there preds might be attracted to reefs 
+# - with more fish on them?
+
+#comparison between high-risk caged and uncaged (trial 6 only)
+
+#plotting, using pl df, in long format####
 
 #new plot, no SEM though, not sure what SEM sciplot will use
 pl$Treatment.combo<-ordered(pl$Treatment.combo, c("Low, Medium, High"))
