@@ -6,6 +6,13 @@
 #  A) I took out species, and condensed all observations down to a single row per reef
 #  B) For analyses, data need to be in wide format, with separate categories for each photo class
 #  C) For plotting, data need to be in short format (need column for "predator category")
+# Lastly, it's important to note how these are being coded for figures:
+# if a single predator was seen in a photo, it was marked as a 1 for containing predator
+# That's regardless of where the predator was seen in the frame
+# I mention this because if a predator were seen in a photo and at the edge of a sm. cage
+# - then it would count for both present, and sublethal risk
+# I did not, however, count lethal predators as being both sublethal and lethal (i.e. they
+# - were only counted as one or the other)
 # --------------
 
 rm(list=ls())
@@ -59,43 +66,6 @@ repro<-read.csv(file= "Data/egg.counts.2019.12.23.csv")
 repro$Year.fact<-as.factor(repro$Year.fact)
 
 #data wrangling####
-
-#separate df named "HR.comp" to compare responses between HR-caged and -uncaged treatments
-# Will not include year or trial in the model for analyses
-# I only did time lapses on high-risk caged and uncaged treatments for T6
-
-HR.comp<-pr1[pr1$Trial==6,]
-View(HR.comp)
-#exporting data
-write.csv(HR.comp,"Data\\2019.1.2.predator.raw.data.high.risk.comparison.csv", row.names = FALSE)
-
-#NOTE: might have to go back and just do Trials < 6 to compare all others
-# that depends on whether there is a trial effect
-
-#doing exactly this now:
-#data frame for trials 1-5 in wide format
-t1.5.w<-pr1[pr1$Trial<6,]
-View(t1.5.w)
-#exporting data
-write.csv(t1.5.w,"Data\\2019.1.2.predator.raw.data.trials.1.5.wide.csv", row.names = FALSE)
-
-# ^ this df will work for analyss for presence/absence, but not for sublethal or lethal
-#need to make df's to subset by treatment
-
-#going to drop low from the model and see if there are still differences
-ptl.sub<-subset(t1.5.w,Treatment!="Low")
-View(ptl.sub)
-
-#no formal analysis will be done for lethal, just make sure to plot it and
-# - include in the figure legend that no statistical test was run for high-risk caged
-# - in trials 1-5
-
-#ask M. Steele: if there are differences between caged and uncaged trts
-# - (e.g. presence of preds) do I have to remove that trial from the 
-# - overall analyses for all trials, and run trials 1-5 and trial 6 as 
-# - two separate anlayses? I think yes (see df "t1.5.l")
-
-# will see if there are statistical differences among trials
 
 #wide format (for analyses)####
 
@@ -159,6 +129,44 @@ pl<-pr1 %>% gather(Predator.class, Score, Present:Lethal.Threat)
 View(pl)
 #exporting in long format
 write.csv(pl,"Data\\2019.1.3.predator.data.long.format.with.avg.inhab.csv", row.names = FALSE)
+
+#separate df named "HR.comp" to compare responses between HR-caged and -uncaged treatments
+# Will not include year or trial in the model for analyses
+# I only did time lapses on high-risk caged and uncaged treatments for T6
+
+HR.comp<-pr1[pr1$Trial==6,]
+View(HR.comp)
+#exporting data
+write.csv(HR.comp,"Data\\2019.1.2.predator.raw.data.high.risk.comparison.csv", row.names = FALSE)
+
+#NOTE: might have to go back and just do Trials < 6 to compare all others
+# that depends on whether there is a trial effect
+
+#doing exactly this now:
+#data frame for trials 1-5 in wide format
+t1.5.w<-pr1[pr1$Trial<6,]
+View(t1.5.w)
+#exporting data
+write.csv(t1.5.w,"Data\\2019.1.2.predator.raw.data.trials.1.5.wide.csv", row.names = FALSE)
+
+# ^ this df will work for analyss for presence/absence, but not for sublethal or lethal
+#need to make df's to subset by treatment
+
+#going to drop low from the model and see if there are still differences
+ptl.sub<-subset(t1.5.w,Treatment!="Low")
+View(ptl.sub)
+levels(ptl.sub$Treatment)
+
+#no formal analysis will be done for lethal, just make sure to plot it and
+# - include in the figure legend that no statistical test was run for high-risk caged
+# - in trials 1-5
+
+#ask M. Steele: if there are differences between caged and uncaged trts
+# - (e.g. presence of preds) do I have to remove that trial from the 
+# - overall analyses for all trials, and run trials 1-5 and trial 6 as 
+# - two separate anlayses? I think yes (see df "t1.5.l")
+
+# will see if there are statistical differences among trials
 
 #for trials 1-5 only (l, m, h (caged) only)
 trial.1.5.long<-pl[pl$Trial<6,]
@@ -309,6 +317,8 @@ anova(modl.2)
 # - "better" model with trial 1-5 only, where all treatments were present
 
 #analyses run with new df's for trials 1-5 only (df = "t1.5.w")
+#BIG NOTE: these are the models that I put in the MS draft
+# - that I was working on on 2019.1.3-
 
 #ai) full model
 modpi<-lme(Present~Treatment*Year.fact*avg.inhab,
@@ -394,58 +404,72 @@ anova(modpa.3t)
 
 # 2) proportion of photos that contained sublethal predators
 # (comparable among medium- and high-risk treatments only)
+#not quite sure if the subset df that I made only contians comparable treatments
+# - i.e., it liiks like low is still included, but will try and model it for a test
 
-# there 
+#NOTE: these are the data that I put in the table for the MS draft (2019.1.3)
 #a) full model, including covariate of avg.inhab
-modpa<-lme(Present~Treatment*Year.fact*avg.inhab,random=~1|Trial,pr1,method="REML")
-qqnorm(resid(modpa))
-qqline(resid(modpa))
-summary(modpa)
-anova(modpa, type='marginal')
+modsi<-lme(Sublethal.Threat~Treatment*Year.fact*avg.inhab,
+           random=~1|Trial,ptl.sub,method="REML")
+hist(resid(modsi))
+qqnorm(resid(modsi))
+qqline(resid(modsi))
+summary(modsi)
+anova(modsi, type='marginal')
+fixef(modsi)
+
+#checking this out further, seems to be working correctly
+Summarize(Sublethal.Threat~Treatment,
+          data=ptl.sub,
+          digits=3)
 
 #ai) removing three-way interaction with covariate
-modpa.1<-lme(Present~Treatment*Year.fact+(Treatment*avg.inhab)+
-               (Year.fact*avg.inhab)+avg.inhab,random=~1|Trial,
-             pr1,method="REML")
-qqnorm(resid(modpa.1))
-qqline(resid(modpa.1))
-summary(modpa.1)
-anova(modpa.1, type='marginal')
+modsii<-lme(Sublethal.Threat~Treatment*Year.fact+(Treatment*avg.inhab)+
+            (Year.fact*avg.inhab)+avg.inhab,random=~1|Trial,
+            ptl.sub,method="REML")
+hist(resid(modsii))
+qqnorm(resid(modsii))
+qqline(resid(modsii))
+summary(modsii)
+anova(modsii, type='marginal')
 
 #aii) removing interactions with covariate
-modpa.2<-lme(Present~Treatment*Year.fact+avg.inhab,random=~1|Trial,
-             pr1,method="REML")
-qqnorm(resid(modpa.2))
-qqline(resid(modpa.2))
-summary(modpa.2)
-anova(modpa.2, type='marginal')
+modsiii<-lme(Sublethal.Threat~Treatment*Year.fact+avg.inhab,random=~1|Trial,
+            ptl.sub,method="REML")
+hist(resid(modsiii))
+qqnorm(resid(modsiii))
+qqline(resid(modsiii))
+summary(modsiii)
+anova(modsiii, type='marginal')
 
 #aiii) removing covariate altogether
-modpa.3<-lme(Present~Treatment*Year.fact,random=~1|Trial,
-             pr1,method="REML")
-qqnorm(resid(modpa.3))
-qqline(resid(modpa.3))
-summary(modpa.3)
-anova(modpa.3, type='marginal')
-ranef(modpa.3)
+modsiv<-lme(Sublethal.Threat~Treatment*Year.fact,random=~1|Trial,
+             ptl.sub,method="REML")
+hist(resid(modsiv))
+qqnorm(resid(modsiv))
+qqline(resid(modsiv))
+summary(modsiv)
+anova(modsiv, type='marginal')
 
 #testing for differences among trials, including as a fixed effect
-modpa.3t<-aov(Present~Treatment+Year.fact+avg.inhab+Trial, data=pr1)
-hist(resid(modpa.3t))
-qqnorm(resid(modpa.3t))
-qqline(resid(modpa.3t))
-summary(modpa.3t)
-anova(modpa.3t)
 
+#interactions
+modsv<-aov(Present~Treatment*Year.fact*avg.inhab*Trial, data=ptl.sub)
+hist(resid(modsv))
+qqnorm(resid(modsv))
+qqline(resid(modsv))
+summary(modsv)
+anova(modsv) #nothing significant
 
-modp<-lme(egg.week~Treatment*Year.fact*avg.inhab,random=~1|Trial,pr1,method="REML")
-summary(mod2.luk)
-anova(mod2.luk, type='marginal')
+#no interactions
+modsvi<-aov(Present~Treatment+Year.fact+avg.inhab+Trial, data=ptl.sub)
+hist(resid(modsvi))
+qqnorm(resid(modsvi))
+qqline(resid(modsvi))
+summary(modsvi)
+anova(modsvi)
 
-#Lukas's model with nlme, let's do the full model and then reduce if needed
-mod2.luk<-lme(egg.week~Treatment*Year.fact*avg.inhab,random=~1|Trial,repro,method="REML")
-summary(mod2.luk)
-anova(mod2.luk, type='marginal')
+#doesn't seem to be an effect of trial on the prop of photos that contained sublethal predators
 
 
 #plotting, using data in long format (trials 1-5: pl, trial6 6: HR.comp)####
@@ -484,6 +508,17 @@ pl$Treatment.combo<-ordered(pl$Treatment.combo, c("Low, Medium, High"))
 
 #will analyze with df in wide format (p), comaparing treatments with the same 
 # achievable scores (i.e. 0-3 for all, 4 for MR and HR)
+
+#plotting figures, will likely be my final plots in ggplot
+#doing with barplot now
+
+#trials 1-5, df = "trial.1.5.long"
+trial.1.5.long$Treatment.ordered<-ordered(trial.1.5.long$Treatment,c("Low","Medium","High"))
+trial.1.5.long$Predator.class.ordered<-ordered(trial.1.5.long$Predator.class,c("Present","Sublethal.Threat","Lethal.Threat"))
+bargraph.CI(x.factor = Treatment.ordered, response = Score, group = Predator.class.ordered,
+            legend=TRUE, xlab="Treatment", ylab= "proportion of photos", main="predator activity, trials 1-5", data = trial.1.5.long)
+
+View(trial.1.5.long)
 
 # changing df for analyses#####
 #trying one variable at a time (presence -> sublethal -> lethal (really only applicable for T6))
