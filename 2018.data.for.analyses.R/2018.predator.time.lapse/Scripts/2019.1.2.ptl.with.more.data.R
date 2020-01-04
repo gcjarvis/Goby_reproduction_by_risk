@@ -489,7 +489,19 @@ lineplot.CI(avg.inhab,Present,group=T6.comparison,legend = TRUE,
 bargraph.CI(x.factor = Treatment.combo, response = Score, group = Predator.class, legend=TRUE, main="predator presence, prelim",x.leg = 10, data = pl)
 
 #2) sublethal threat
-#not really needed, no differences statistically
+#not really needed, no differences statistically, but going to combine lethal and sublethal
+#into one frame
+
+#first, subset df to only include lethal and sublethal from HR.long
+HR.long.sub<-subset(HR.long,Predator.class!="Present")
+HR.long.sub<-subset(HR.long.sub,T6.comparison!=c("Low","Medium"))
+View(HR.long.sub)
+
+
+#plotting
+bargraph.CI(x.factor = T6.comparison, response = Score, group = Predator.class,
+            legend=TRUE, main="predator lethal + sublethal, t6 comp", data = HR.long.sub)
+
 
 #3) lethal threat
 #no differences, but want to see what's going on with weird F-value
