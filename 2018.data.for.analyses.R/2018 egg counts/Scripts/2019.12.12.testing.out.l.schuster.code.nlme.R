@@ -44,6 +44,14 @@ repro<-repro %>%
 #exporting wrangled data
 write.csv(repro,"Data\\egg.counts.2019.12.23.csv", row.names = FALSE)
 
+#subsetting data to do t6 comparison between HR caged and uncaged treatments
+#subset trial
+repro.t6<-repro[repro$Trial==6,]
+#subset treatments, caged and uncaged only (T6.comparison)
+
+#subsetting by multiple character factors within a variable. Awesome code!
+repro.t6.comp<-repro.t6[repro.t6$T6.comparison == "High" | repro.t6$T6.comparison == "Uncaged", ]
+View(repro.t6.comp)
 
 #modeling####
 #original model with lme4, with weekly output per reef as response variable, shown is the reduced model 
@@ -157,6 +165,27 @@ lsmeans(mod2.2.luk,
 #        pairwise ~ Classroom,
 #        adjust="tukey")
 #
+
+#testing for differences in output between HR caged and uncaged treatments####
+
+#NOTES: 1) trial 6 only, using "repro.t6.comp" df, and "T6.comparison" for treatments
+# 2) it's no longer a nested ANCOVA, it's just an ANCOVA with trt and avg.inhab,
+# - so it's just a linear model
+# 3) will add the reduced model results to the table for egg counts,
+# - and the full model results to the supplementary table for egg counts
+
+#full model
+modt6.luk<-lm(egg.week~T6.comparison*avg.inhab,data=repro.t6.comp)
+summary(modt6.luk)
+anova(modt6.luk)
+
+#reducing because no effect of covariate
+modt6.luk<-lm(egg.week~T6.comparison,data=repro.t6.comp)
+summary(modt6.luk)
+anova(modt6.luk)
+
+#added these stats to tables
+
 #testing trial as a fixed effect####
 #not sure it makes sense to run it this way
 mod3.t<-lm(egg.week~Treatment*Year.fact*Trial*avg.inhab,repro)
