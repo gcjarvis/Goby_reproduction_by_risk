@@ -34,6 +34,15 @@ reco$Year.fact<- as.factor(reco$Year)
 #for now, I'll analyze it with the raw data, and also with the proportional data to 
 # see how the results change
 
+#subsetting data to do t6 comparison between HR caged and uncaged treatments
+#subset trial
+reco.t6<-reco[reco$Trial==6,]
+#subset treatments, caged and uncaged only (T6.comparison)
+
+#subsetting by multiple character factors within a variable. Awesome code!
+reco.t6.comp<-reco.t6[reco.t6$T6.comparison == "High" | reco.t6$T6.comparison == "Control", ]
+View(reco.t6.comp)
+
 #models####
  
 #using raw counts, including year, and trial nested within year, year as numeric
@@ -72,6 +81,18 @@ Summarize(Survivorship~Treatment,
           data=reco,
           digits=3)
 
+#testing for differences in output between HR caged and uncaged treatments####
+
+#NOTES: 1) trial 6 only, using "repro.t6.comp" df, and "T6.comparison" for treatments
+# 2) it's no longer a nested ANCOVA, it's just an ANCOVA with trt and avg.inhab,
+# - so it's just a linear model
+# 3) will add the reduced model results to the table for egg counts,
+# - and the full model results to the supplementary table for egg counts
+
+#full model
+modt6.luk<-lm(Survivorship~T6.comparison,data=reco.t6.comp)
+summary(modt6.luk)
+anova(modt6.luk)
 
 #plotting####
 #ordering treatments
