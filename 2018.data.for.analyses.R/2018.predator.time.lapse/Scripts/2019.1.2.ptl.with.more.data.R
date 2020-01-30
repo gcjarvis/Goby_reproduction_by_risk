@@ -238,6 +238,32 @@ Summarize(Present~Treatment,
 #NOTE: will need to test results among trials to see if there are any sig. differences based
 # - on trial alone, which might not allow me to group data from all trials together
 
+#2020.1.30.edit, just comparing HR caged and uncaged plots with a t-test for each distinction
+#1) present
+#2) sublethal threat
+#3) lethal threat
+
+#loading data (in proper format for t-test)
+hr.t.test<-read.csv(file = "Data/2020.1.30.ptl.t.test.cage.artifacts.csv")
+View(hr.t.test)
+#1) present
+t.test(hr.t.test$present.high,hr.t.test$present.u)
+#no diff in number of predators present
+
+#2) sublethal
+t.test(hr.t.test$sublethal.h,hr.t.test$sublethal.u)
+#no diff in prop of sublethal
+
+#3) lethal
+t.test(hr.t.test$lethal.h,hr.t.test$lethal.u)
+#no diff in lethal, in fact, equal means for each treatment
+
+# I think there are some issues here with sample size, because
+# - there is so much error and such litle sample sizes for each (n=4)
+# - that it would be hard to detect differences, but based on these
+# - results it suggests that there were no effect of caging artifacts,
+# - at least in the high-risk treatments
+
 # 1) will compare high-risk caged and uncaged treatments
 
 # a) proportion of photos that contained predators at all (comparable among all trt's)
