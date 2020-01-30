@@ -201,6 +201,9 @@ fixef(mod1.3a)["Treatment.power"] <- -389238.82
 
 #rerunning power analysis to see what my power would be with that effect size
 powerSim(mod1.3a)
+#Power for predictor 'Treatment.power', 
+#(95% confidence interval):=======|
+# 100.0% (99.63, 100.0)
 
 
 powerSi
