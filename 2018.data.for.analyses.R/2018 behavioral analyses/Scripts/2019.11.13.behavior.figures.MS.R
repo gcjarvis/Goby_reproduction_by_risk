@@ -25,7 +25,7 @@ exp<-with(behave, aggregate((proportion.exposed), list(Treatment=Treatment), mea
 exp$se<-with(behave, aggregate((proportion.exposed), list(Treatment=Treatment), 
                            function(x) sd(x)/sqrt(length(x))))[,2]
 
-png("Output/2019.11.13.exposure.9.5x5.5.300dpi.png", width = 6.5, height = 5.5, units = 'in', res = 300)
+png("Output/2019.2.1.exposure.9.5x5.5.300dpi.png", width = 6.5, height = 5.5, units = 'in', res = 300)
 
 reco.plot<- ggplot(exp, aes(x=Treatment, y=x, fill=Treatment)) +
   geom_bar(stat="identity", colour= "black", width = 0.5, position="dodge")+ 
@@ -42,7 +42,7 @@ reco.plot<- ggplot(exp, aes(x=Treatment, y=x, fill=Treatment)) +
         axis.text.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))) +
   theme(legend.text=element_text(size=18)) +
   theme(legend.title =element_text(size=20))+
-  theme(axis.ticks.x = element_blank()) + scale_y_continuous(expand = c(0,0),limits = c(0,1.015))
+  theme(axis.ticks.x = element_blank()) + scale_y_continuous(expand = c(0,0),limits = c(0,0.807))
 reco.plot + geom_linerange(aes(ymin=x-se, ymax=x+se), size=0.5,   
                            position=position_dodge(.85)) + theme(text = element_text(family="Arial"))
 #not sure why it's off the x axis now...has something to do with breaks
@@ -163,12 +163,13 @@ dev.off()
 #movements per minute with rate in parentheses
 
 png("Output/2019.11.14.courtship.rate.with.parentheses.9.5x5.5.300dpi.png", width = 6.5, height = 5.5, units = 'in', res = 300)
+png("Output/2019.2.1.interactions.with.parentheses.9.5x5.5.300dpi.png", width = 6.5, height = 5.5, units = 'in', res = 300)
 
 reco.plot<- ggplot(cr, aes(x=Treatment, y=x, fill=Treatment)) +
   geom_bar(stat="identity", colour= "black", width = 0.5, position="dodge")+ 
   scale_x_discrete(limits=c("Low","Medium","High"))+
   theme_classic() + 
-  labs(x="Risk Treatment",y=(expression(atop("Courtship", 
+  labs(x="Risk Treatment",y=(expression(atop("Interactions with Conspecifics", 
                                              paste((displays~min^-1))))))+
   theme(legend.position="none") + 
   scale_fill_manual(values=c("grey", "grey", "grey")) +
