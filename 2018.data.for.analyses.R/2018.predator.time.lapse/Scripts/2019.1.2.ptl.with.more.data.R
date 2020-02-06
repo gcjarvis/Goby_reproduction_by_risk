@@ -590,3 +590,79 @@ p.lethal<-with(pred.rm.na, aggregate((contained.pred.score.5),
 p.lethal$lse<-with(pred.rm.na, aggregate((contained.pred.score.5), 
                                          list(Trial=Trial,Reef=Reef,Treatment.combo=Treatment.combo,Treatment.t6=Treatment.t6), function(x) sd(x)/sqrt(length(x))))[,5]
 View(p.lethal)
+
+#ggplot plotting with long format, disregard code before this###
+#first working with data from trials 1-5: proportions of photos where predators were
+# - present (low perceived threat, no actual threat), likely perceived as a sublethal threat
+# - (high perceived threat, no actual threat), and likely perceived as a high threat (high perceived
+# - threat, actual threat)
+
+View(trial.1.5.long)
+
+#formatting data to work with in ggplot
+
+#calculating means and se for each category for proximity
+# want a df that contains average score (proxy for proportion of photos that met the criteria)
+# - grouped by treatment and predator class
+
+pred1.5<-with(trial.1.5.long, aggregate((Score),list(Treatment=Treatment,Predator.class=Predator.class),mean))
+#View(pred1.5)
+pred1.5$se<-with(trial.1.5.long, aggregate((Score),list(Treatment=Treatment,Predator.class=Predator.class), 
+                                           function(x) sd(x)/sqrt(length(x))))[,3]
+#ordering Predator.class values
+pred1.5$Predator.class<-ordered(pred1.5$Predator.class, c("Present","Sublethal.Threat","Lethal.Threat"))
+
+#View(pred1.5)
+
+#ggplot master code
+
+png("Output/2019.2.6.9.5x5.5.300dpi.png", width = 9.5, height = 5.5, units = 'in', res = 300)
+
+t1.5.plot<- ggplot(pred1.5, aes(x=Treatment, y=x, fill=Predator.class)) +
+  geom_bar(stat="identity", colour= "black", width = 0.9, position="dodge")+ 
+  scale_x_discrete(limits=c("Low","Medium","High"))+
+  theme_classic() + 
+  labs(x="Risk Treatment", y = "Proportion of Photos")+ 
+  theme(legend.position="right") + 
+  scale_fill_manual(values=c("#666666", "#999999", "grey")) +
+  theme(axis.text.x=element_text(size=20, colour="black"),
+        axis.text.y=element_text(size=20, colour="black"), 
+        axis.title=element_text(size=20))+
+  theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0)), 
+        axis.title.x = element_text(margin = margin(t = 12, r = 0, b = 0, l = 0)), 
+        axis.text.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))) +
+  theme(legend.text=element_text(size=18)) +
+  theme(legend.title =element_text(size=20))+
+  theme(axis.ticks.x = element_blank()) + scale_y_continuous(expand = c(0,0),limits = c(0,0.605))
+t1.5.plot + geom_linerange(aes(ymin=x-se, ymax=x+se), size=0.5,   
+                           position=position_dodge(.90)) + theme(text = element_text(family="Arial"))
+dev.off()
+
+scale_fill_discrete(name="Predator Classification", labels=c("Present, low threat", "High perceived, no actual threat", 
+                                                             "High perceived and actual threat"), values=c("black", "#666666", "grey"))
+#messing around with order of fill
+t1.5.plot<- ggplot(pred1.5, aes(x=Treatment, y=x, fill=Predator.class)) +
+  geom_bar(stat="identity", colour= "black", width = 0.9, position="dodge")+ 
+  scale_x_discrete(limits=c("Low","Medium","High"))+
+  theme_classic() + 
+  labs(x="Risk Treatment", y = "Proportion of Photos")+ 
+  theme(legend.position="right") + 
+scale_fill_manual(values=c("#666666", "#999999", "grey")) +
+  theme(axis.text.x=element_text(size=20, colour="black"),
+        axis.text.y=element_text(size=20, colour="black"), 
+        axis.title=element_text(size=20))+
+  theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0)), 
+        axis.title.x = element_text(margin = margin(t = 12, r = 0, b = 0, l = 0)), 
+        axis.text.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))) +
+  theme(legend.text=element_text(size=18)) +
+  theme(legend.title =element_text(size=20))+
+  theme(axis.ticks.x = element_blank()) + scale_y_continuous(expand = c(0,0),limits = c(0,0.605))
+t1.5.plot + geom_linerange(aes(ymin=x-se, ymax=x+se), size=0.5,   
+                           position=position_dodge(.90)) + theme(text = element_text(family="Arial"))
+
+#grrr...always run into this problem in R. Can't figure out how to change the colors and the legend labels
+#I can do one or the other, but not both at the same time
+
+
+scale_fill_discrete(name="Predator Classification", labels=c("Present, low threat", "High perceived, no actual threat", 
+       "High perceived and actual threat"))
