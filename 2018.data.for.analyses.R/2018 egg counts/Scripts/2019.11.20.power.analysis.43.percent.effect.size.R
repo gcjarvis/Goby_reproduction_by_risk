@@ -5,6 +5,7 @@
 # --------------
 
 library(lme4)
+library(lmerTest)
 library(nlme)
 library(car)
 library(pwr)
@@ -229,6 +230,125 @@ powerInteract(110, 2, 3, 0.8, alpha = 0.05, nTests = 1)
 powerInteract(110, 2, 3, 0.20, alpha = 0.05, nTests = 1)
 #with what we actually saw, we had an 11% chance to see an effect
 
+# retrying with code from simR package####
+# code found at: https://humburg.github.io/Power-Analysis/simr_power_analysis.html
+
+#rationale: I was having trouble with simR before because I was constructing the model 
+# - incorrectly. I need to rsonctruct the model with more explicit parameters
+
+#reduced model that I used for my analyses
+#NOTE: this was constructed with nlme package, need to change to lmer
+mod2.2.luk<-lme(egg.week~(Treatment*Year.fact)+ Treatment+
+                  avg.inhab+Year.fact,random=~1|Trial,repro,method="REML")
+anova(mod2.2.luk)
+summary(mod2.2.luk)
 
 
+#rationale: even though the model construction is different, the results should be fairly similar
+#- Also, if it allows me to be able to run the simR package, then this is the best I can do
 
+#making lmer model within the simR package
+#template
+model <- makeLmer(y ~ treat*time + (1|class/id), fixef=fixed, VarCorr=rand, sigma=res, data=covars)
+model
+
+#my model
+mod.sim<- makeLmer(egg.week~(Treatment*Year.fact)+Treatment+avg.inhab+
+                     Year.fact+(1|Year.fact/Trial),data=repro)
+#doesn't like it like that, but I can run the model and add the parameters that
+# - the code is lacking (efect sizes and variance)
+
+#running the lmer model
+mod2.2<-lmer(egg.week~Treatment*Year.fact+avg.inhab+(1|Year.fact:Trial),
+             data=repro)
+hist(resid(mod2.2))
+qqnorm(resid(mod2.2))
+qqline(resid(mod2.2))
+anova(mod2.2)
+Anova(mod2.2)
+ranef(mod2.2)
+summary(mod2.2)
+
+#want to get the variance of the slopes (mainly Year.fact)
+#temlplate
+(summary(m)$coefficients[2,2])**2
+
+(summary(mod2.2)$coefficients[4,2])**2# [4,2] gets me to std.error for year
+#trying another way
+#template
+vcov(m)[2,2]
+
+#mine
+vcov(mod2.2)[4,2] #not the same values...but I feel more confident in this value
+# - just based off of the egg counts (other value is ~100k, no way that could be it)
+
+#trying to calculate the variance for year
+#going to calculate it by hand, based on se and n=2 (2 years)
+
+321.8912*(sqrt(2)) # = 455.2229, doesn't seem to be right
+
+
+mod.view<-(summary(mod2.2)$coefficients) #not what I want, but great way to export a table!
+View(mod.view)
+
+#setting the effect sizes based on summary of lmer model
+
+#template (done ahead of time typically)
+
+## Intercept and slopes for intervention, time1, time2, intervention:time1, intervention:time2
+fixed <- c(5, 0, 0.1, 0.2, 1, 0.9)
+
+## Random intercepts for participants clustered by class
+rand <- list(0.5, 0.1)
+
+## residual variance
+res <- 2
+
+#want to see which treatments correspond to the summary table
+
+#my version (found difference between each estimate, relative to the intercept)
+
+fixed<-c(-6274.33,-6414.55,-5888.02,-6058.39,-5537.64,-6089.48,
+         -6127.15)
+
+#random intercepts for trials, clustered by year (have thesse values)
+rand<-list(546.68241,-94.38653,-452.29588,290.42689,325.57428,-616.00117)
+# Error in fn(theta) : theta size mismatch (6!=2)
+
+# I don't think it likes that I have all these random intercepts, only wants 2 values
+# - for the vector
+
+#random intercept variance for trial nested within year
+#intercept for nested factor is first, then year.fact (used same value as the one for fixedef)
+#need to get the variance for Year.fact
+var(Year.fact)
+
+rand1<-list(413133,103614) #decided to go with the value for the variance of the slope for year
+(summary(mod2.2)$coefficients[4,2])**2 #103614
+
+#residual variance
+res<- 3769288
+
+#rerunning model with specified parameters given from model
+#mod.sim<- makeLmer(egg.week~(Treatment*Year.fact)+Treatment+avg.inhab+
+#                     Year.fact+(1|Year.fact/Trial),fixef = fixed, VarCorr = rand1,
+#                     sigma = res, data=repro)
+
+#using rand1 for varcorr
+mod.sim<- makeLmer(egg.week~(Treatment*Year.fact)+Treatment+avg.inhab+
+                    Year.fact+(1|Year.fact/Trial),fixef = fixed, VarCorr = rand1,
+                    sigma = res, data=repro)
+mod.sim
+
+#power analysis
+#interested in the effect of treatment here, so have to compare to alternative
+# - models by specifying the fixed factors that we are not interested in 
+# - (i.e. Year.Fact, and avg.inhab) with the "fcompare" fuction
+
+#template
+sim_treat <- powerSim(model, nsim=100, test = fcompare(y~time))
+sim_treat
+
+#mine
+sim_treat <- powerSim(mod.sim, nsim=100, test = fcompare(egg.week~Year.fact))
+sim_treat
