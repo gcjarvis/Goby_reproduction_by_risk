@@ -245,7 +245,7 @@ Summarize(Present~Treatment,
 #3) lethal threat
 
 #loading data (in proper format for t-test)
-hr.t.test<-read.csv(file = "Data/2020.1.30.ptl.t.test.cage.artifacts.csv")
+hr.t.test<-read.csv(file = "Data/2020.1.30.ptl.t.test.cage.artifacts.csv") #sending this to Mark
 View(hr.t.test)
 #1) present
 t.test(hr.t.test$present.high,hr.t.test$present.u)
