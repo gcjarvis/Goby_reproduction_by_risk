@@ -31,6 +31,7 @@ library(vegan)
 library(multcomp)
 library(tidyverse)
 library(tidyr)
+library(plyr)
 library(qpcR)#for cbind.na
 
 #type III ANOVA
@@ -558,40 +559,7 @@ bargraph.CI(x.factor = Treatment.ordered, response = Score, group = Predator.cla
 
 View(trial.1.5.long)
 
-# changing df for analyses#####
-#trying one variable at a time (presence -> sublethal -> lethal (really only applicable for T6))
-
-#predator presence (applicable for all treatments)
-p.presence<-with(pred.rm.na, aggregate((contained.pred.at.all.regardless.spp.), 
-                                       list(Trial=Trial,Reef=Reef,Treatment.combo=Treatment.combo,Treatment.t6=Treatment.t6), mean))
-
-#SEM for pred presence
-#here, each photo within a time-lapse is the unit of replication
-p.presence$pse<-with(pred.rm.na, aggregate((contained.pred.at.all.regardless.spp.), 
-                                           list(Trial=Trial,Reef=Reef,Treatment.combo=Treatment.combo,Treatment.t6=Treatment.t6), function(x) sd(x)/sqrt(length(x))))[,5]
-View(p.presence)
-
-#sublethal presence (applicable for all but low risk)
-p.sublethal<-with(pred.rm.na, aggregate((contianed.pred.score.4), 
-                                        list(Trial=Trial,Reef=Reef,Treatment.combo=Treatment.combo,Treatment.t6=Treatment.t6), mean))
-
-#SEM for pred presence
-#here, each photo within a time-lapse is the unit of replication
-p.sublethal$sse<-with(pred.rm.na, aggregate((contianed.pred.score.4), 
-                                            list(Trial=Trial,Reef=Reef,Treatment.combo=Treatment.combo,Treatment.t6=Treatment.t6), function(x) sd(x)/sqrt(length(x))))[,5]
-View(p.sublethal)
-
-#lethal presence (applicable for high-risk caged, and high-risk uncaged)
-p.lethal<-with(pred.rm.na, aggregate((contained.pred.score.5), 
-                                     list(Trial=Trial,Reef=Reef,Treatment.combo=Treatment.combo,Treatment.t6=Treatment.t6), mean))
-
-#SEM for pred presence
-#here, each photo within a time-lapse is the unit of replication
-p.lethal$lse<-with(pred.rm.na, aggregate((contained.pred.score.5), 
-                                         list(Trial=Trial,Reef=Reef,Treatment.combo=Treatment.combo,Treatment.t6=Treatment.t6), function(x) sd(x)/sqrt(length(x))))[,5]
-View(p.lethal)
-
-#ggplot plotting with long format, disregard code before this###
+#ggplot plotting with data in long format###
 #first working with data from trials 1-5: proportions of photos where predators were
 # - present (low perceived threat, no actual threat), likely perceived as a sublethal threat
 # - (high perceived threat, no actual threat), and likely perceived as a high threat (high perceived
@@ -616,14 +584,15 @@ pred1.5$Predator.class<-ordered(pred1.5$Predator.class, c("Present","Sublethal.T
 
 #ggplot master code
 
+#this is the plot that I used to make the black and grayscale figure, with no figure legend, for the MS
+
 png("Output/2019.2.6.9.5x5.5.300dpi.png", width = 9.5, height = 5.5, units = 'in', res = 300)
 
 t1.5.plot<- ggplot(pred1.5, aes(x=Treatment, y=x, fill=Predator.class)) +
-  geom_bar(stat="identity", colour= "black", width = 0.9, position="dodge")+ 
+  geom_bar(stat="identity", colour= "black", width = 0.9, position="dodge", show.legend = FALSE)+ 
   scale_x_discrete(limits=c("Low","Medium","High"))+
   theme_classic() + 
   labs(x="Risk Treatment", y = "Proportion of Photos")+ 
-  theme(legend.position="right") + 
   scale_fill_manual(values=c("#666666", "#999999", "grey")) +
   theme(axis.text.x=element_text(size=20, colour="black"),
         axis.text.y=element_text(size=20, colour="black"), 
@@ -640,14 +609,20 @@ dev.off()
 
 scale_fill_discrete(name="Predator Classification", labels=c("Present, low threat", "High perceived, no actual threat", 
                                                              "High perceived and actual threat"), values=c("black", "#666666", "grey"))
-#messing around with order of fill
+#messing around with order of fill, have to do this in two steps, first make black and white with no legend, then color (fill discrete)
+# - with labels that are correct
+# Then have to bring into PPT and change the color of the boxes in the legend to match the colors in the B&W figure
+
+
+#this is the plot that I used to make a color figure, with a figure legend (see scale fill discrete), for the MS
+png("Output/2019.2.6.9.5x5.5.color.300dpi.png", width = 9.5, height = 5.5, units = 'in', res = 300)
+
 t1.5.plot<- ggplot(pred1.5, aes(x=Treatment, y=x, fill=Predator.class)) +
   geom_bar(stat="identity", colour= "black", width = 0.9, position="dodge")+ 
   scale_x_discrete(limits=c("Low","Medium","High"))+
   theme_classic() + 
   labs(x="Risk Treatment", y = "Proportion of Photos")+ 
   theme(legend.position="right") + 
-scale_fill_manual(values=c("#666666", "#999999", "grey")) +
   theme(axis.text.x=element_text(size=20, colour="black"),
         axis.text.y=element_text(size=20, colour="black"), 
         axis.title=element_text(size=20))+
@@ -656,13 +631,53 @@ scale_fill_manual(values=c("#666666", "#999999", "grey")) +
         axis.text.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))) +
   theme(legend.text=element_text(size=18)) +
   theme(legend.title =element_text(size=20))+
-  theme(axis.ticks.x = element_blank()) + scale_y_continuous(expand = c(0,0),limits = c(0,0.605))
+  theme(axis.ticks.x = element_blank()) + scale_y_continuous(expand = c(0,0),limits = c(0,0.605))+
+  scale_fill_discrete(name="Threat from Predators", labels=c("Low perceived, no actual threat", "High perceived, no actual threat", 
+                                                               "High perceived, actual threat"))
 t1.5.plot + geom_linerange(aes(ymin=x-se, ymax=x+se), size=0.5,   
                            position=position_dodge(.90)) + theme(text = element_text(family="Arial"))
 
-#grrr...always run into this problem in R. Can't figure out how to change the colors and the legend labels
-#I can do one or the other, but not both at the same time
+dev.off()
 
+#now have to do the same thing, but with Trial 6 data only (HR.long df)
+#using "T6.comparison" for treatment factor this time
 
-scale_fill_discrete(name="Predator Classification", labels=c("Present, low threat", "High perceived, no actual threat", 
-       "High perceived and actual threat"))
+#View(HR.long)
+
+pred.6<-with(HR.long, aggregate((Score),list(T6.comparison=T6.comparison,Predator.class=Predator.class),mean))
+#View(pred.6)
+pred.6$se<-with(HR.long, aggregate((Score),list(T6.comparison=T6.comparison,Predator.class=Predator.class), 
+                                           function(x) sd(x)/sqrt(length(x))))[,3]
+#ordering Predator.class values
+pred.6$Predator.class<-ordered(pred.6$Predator.class, c("Present","Sublethal.Threat","Lethal.Threat"))
+
+#renaming the labels for high-risk treatment t6.comparison with base R from High to "High - Caged" and "Uncaged" to "High - Uncaged" 
+#will eventually have a second figure that has "Risk Treatment" as the x axis, and can just compare caging effects, that will be more clear anyway
+#doing it in the new df ("pred.6"), not in the original df used to make calculations ("HR.long")
+
+# Rename by name: change "High" to "Caged"
+levels(pred.6$T6.comparison)[levels(pred.6$T6.comparison)=="High"] <- "High - Caged"
+levels(pred.6$T6.comparison)[levels(pred.6$T6.comparison)=="Uncaged"] <- "High - Uncaged"
+
+#note: this is the code that I used to make the figure for the MS (see PPT for figure manipulations)
+
+png("Output/2019.2.6.9.5x5.5.trial6.300dpi.png", width = 9.5, height = 5.5, units = 'in', res = 300)
+
+t1.5.plot<- ggplot(pred.6, aes(x=T6.comparison, y=x, fill=Predator.class)) +
+  geom_bar(stat="identity", colour= "black", width = 0.60, position="dodge", show.legend = FALSE)+ 
+  scale_x_discrete(limits=c("High - Caged", "High - Uncaged"))+
+  theme_classic() + 
+  labs(x="Risk Treatment", y = "Proportion of Photos")+ 
+  scale_fill_manual(values=c("#666666", "#999999", "grey")) +
+  theme(axis.text.x=element_text(size=20, colour="black"),
+        axis.text.y=element_text(size=20, colour="black"), 
+        axis.title=element_text(size=20))+
+  theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0)), 
+        axis.title.x = element_text(margin = margin(t = 12, r = 0, b = 0, l = 0)), 
+        axis.text.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))) +
+  theme(legend.text=element_text(size=18)) +
+  theme(legend.title =element_text(size=20))+
+  theme(axis.ticks.x = element_blank()) + scale_y_continuous(expand = c(0,0),limits = c(0,0.82))
+t1.5.plot + geom_linerange(aes(ymin=x-se, ymax=x+se), size=0.5,   
+                           position=position_dodge(.60)) + theme(text = element_text(family="Arial"))
+dev.off()
