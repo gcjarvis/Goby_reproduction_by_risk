@@ -108,6 +108,15 @@ anova(mod2.4.luk, type='marginal') #NaNs as well, not sure if I'll be able to sp
 
 # lme(Thickness ~ 1, random=list(~1|Lot, ~1|Wafer), data=Oxide)
 
+#2020.3.8 after watching video on mixed effects models####
+
+mod2.4.luk<-lme(egg.week~(Treatment*Year.fact)+avg.inhab,random= 
+                  ~1|Trial/Year.fact,repro,method="REML")
+summary(mod2.4.luk)
+anova(mod2.4.luk, type='marginal') #NaNs as well, not sure if I'll be able to specify
+
+#output is the same, which shows that R was at least nesting correctly
+
 #Arithmetic vs. LS means (takes model means into account)####
 if(!require(FSA)){install.packages("FSA")}
 if(!require(psych)){install.packages("psych")}

@@ -61,7 +61,18 @@ pwr.f2.test(u = 2, v = 86, f2 = NULL, sig.level = 0.05, power = .80)
 
 pwr.f2.test(u = NULL, v = NULL, f2 = NULL, sig.level = 0.05, power = NULL)
 
-#2020.1.8 update, using fully-reduced model from "2019.12.12.testing.out.l.schuster.code" script
+#2020.3.7 update after emailing CSUN R wizards#####
+
+#tricky part is figuring out what the correct error term is so that I have
+# - the right denom df
+
+#going to mess around with it
+
+#based off of 2, 99 df (num, denom)
+
+pwr.f2.test(u = 2, v = 6, f2 = 0.20, sig.level = 0.05, power = NULL)
+
+#2020.1.8 update, using fully-reduced model from "2019.12.12.testing.out.l.schuster.code" script####
 
 #trying out new package to test for power of mixed models
 
