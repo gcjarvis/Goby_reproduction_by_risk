@@ -363,3 +363,41 @@ sim_treat
 #mine
 sim_treat <- powerSim(mod.sim, nsim=100, test = fcompare(egg.week~Year.fact))
 sim_treat
+
+#2020.3.10 S. Dudgeon recommendations for power analysis######
+
+# 1- do power curve: going to change the denomDF from 8-40, based on 0.4 effect size reported on other paper
+#saturates after ~30 replicates
+
+pwr.f2.test(u = 2, v = 8, f2 = 0.40, sig.level = 0.05, power = NULL) #32%
+
+pwr.f2.test(u = 2, v = 10, f2 = 0.40, sig.level = 0.05, power = NULL) #40%
+
+pwr.f2.test(u = 2, v = 20, f2 = 0.40, sig.level = 0.05, power = NULL) #71%
+
+pwr.f2.test(u = 2, v = 30, f2 = 0.40, sig.level = 0.05, power = NULL) #88%
+
+pwr.f2.test(u = 2, v = 40, f2 = 0.40, sig.level = 0.05, power = NULL) #96%
+
+# now looking at same thing, but with effect size found in my paper
+
+pwr.f2.test(u = 2, v = 8, f2 = 0.20, sig.level = 0.05, power = NULL) #18%
+
+pwr.f2.test(u = 2, v = 10, f2 = 0.20, sig.level = 0.05, power = NULL) #22%
+
+pwr.f2.test(u = 2, v = 20, f2 = 0.20, sig.level = 0.05, power = NULL) #41%
+
+pwr.f2.test(u = 2, v = 30, f2 = 0.20, sig.level = 0.05, power = NULL) #58%
+
+pwr.f2.test(u = 2, v = 40, f2 = 0.20, sig.level = 0.05, power = NULL) #72%
+
+pwr.f2.test(u = 2, v = 50, f2 = 0.20, sig.level = 0.05, power = NULL) #81% #would have only taken 50 replicates to detect an effect of 20%
+
+pwr.f2.test(u = 2, v = 60, f2 = 0.20, sig.level = 0.05, power = NULL) #88%
+
+pwr.f2.test(u = 2, v = 70, f2 = 0.20, sig.level = 0.05, power = NULL) #93%
+
+pwr.f2.test(u = 2, v = 80, f2 = 0.20, sig.level = 0.05, power = NULL) #96% #starts to plateau at 80 replicates
+
+
+

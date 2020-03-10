@@ -110,10 +110,20 @@ anova(mod2.4.luk, type='marginal') #NaNs as well, not sure if I'll be able to sp
 
 #2020.3.8 after watching video on mixed effects models####
 
+#trial as a factor
+repro$Trial.factor<-as.factor(repro$Trial)
+
 mod2.4.luk<-lme(egg.week~(Treatment*Year.fact)+avg.inhab,random= 
                   ~1|Trial/Year.fact,repro,method="REML")
 summary(mod2.4.luk)
 anova(mod2.4.luk, type='marginal') #NaNs as well, not sure if I'll be able to specify
+
+#as all fixed factors?
+mod.fix.all<-aov(egg.week~Treatment*Year*Trial+avg.inhab, data=repro)
+summary(mod.fix.all)
+
+mod.fix.all.fact<-aov(egg.week~Treatment*Year*Trial.factor+avg.inhab, data=repro)
+summary(mod.fix.all.fact)
 
 #output is the same, which shows that R was at least nesting correctly
 
