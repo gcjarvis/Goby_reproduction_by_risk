@@ -235,3 +235,82 @@ summary(glht(mod2.2.luk, linfct=mcp(Treatment="Tukey")))
 # I don't think I have to do this, because I'm not doing post-hoc tests
 # I'm just going to say that there were overall differences when there were,
 # - and which factors in the model contributed to those differences
+
+####2020.3.14 log liklihood testing for significance for random nested factor####
+
+#rationale: going to comapare the model results from the full model
+# - with that of a reduced model (i.e. one that doesn't include the random factor)
+# - of trial nested within year
+
+#got the code from L. Schuster
+
+#mixed model (includes random factor, use nlme package, "full model")
+# NOTE: use method= 'ML'
+
+#year as numeric, trial as integer (different result from others)
+egg.mm<-lme(egg.week~Treatment*Year+avg.inhab,random=~1|Trial,repro,method='ML')
+summary(egg.mm)
+
+#year as factor, trial as integer (same result as egg.mmff)
+egg.mmf<-lme(egg.week~Treatment*Year.fact+avg.inhab,random=~1|Trial,repro,method='ML')
+summary(egg.mmf)
+
+#year as factor, trial as factor (same results as egg.mmf)
+egg.mmff<-lme(egg.week~Treatment*Year.fact+avg.inhab,random=~1|Trial.fact,repro,method='ML')
+summary(egg.mmff)
+
+#not sure about the best way include year in the model - as factor or numeric?
+
+#for now, will move ahead with log-liklihood testing
+
+#trying out egg.mm first
+hist(resid(egg.mm)) #looks good
+logLik(egg.mm) #log-lik: -988.4227 (df=9)
+
+#egg.mmf
+hist(resid(egg.mmf)) # same
+logLik(egg.mmf) #log-lik: -988.4227 (df=9)
+
+#egg.mmff
+hist(resid(egg.mmff)) # same
+logLik(egg.mmff) #log-lik: -988.4227 (df=9)
+
+#now going to run the reduced models without the random effect
+
+#year as numeric, trial as integer (different result from others)
+regg<-lm(egg.week~Treatment*Year+avg.inhab,repro)
+summary(regg)
+
+#year as factor, trial as integer (same result as egg.mmff)
+regg.f<-lm(egg.week~Treatment*Year.fact+avg.inhab,repro)
+summary(regg.f)
+
+#no need to run another version because no trial vs. trial.fact term
+
+#testing logLik of each of the reduced models
+
+#trying out egg.mm first
+
+hist(resid(regg)) #looks good, slightly worse than mixed model with 
+# - year as numeric
+logLik(regg) #log-lik: -989.345 (df=8) #looks very similar to other model
+
+#egg.mmf
+hist(resid(regg.f)) # same
+logLik(regg.f) #log-lik: -989.345 (df=8) #same
+
+#compare logLik of full model to that of reduced model
+# NOTE: year and trial as numeric and integer, respectively
+
+2 * (logLik(egg.mm) - logLik(regg)) #chi2 = 1.844638
+pchisq(2 * (logLik(egg.mm) - logLik(regg)), df=1, lower.tail = F)
+# chi2 = 1.844638, p = 0.1744083
+
+#same analysis, but with year as trial as factors
+
+2 * (logLik(egg.mmff) - logLik(regg.f)) #chi2 = 1.844638
+pchisq(2 * (logLik(egg.mmff) - logLik(regg.f)), df=1, lower.tail = F)
+# chi2 = 1.844638, p = 0.1744083
+
+#same result = thank god
+
