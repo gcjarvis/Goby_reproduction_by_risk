@@ -314,3 +314,202 @@ pchisq(2 * (logLik(egg.mmff) - logLik(regg.f)), df=1, lower.tail = F)
 
 #same result = thank god
 
+#testing out code from L. Shuster to see if there are interactions with
+# - the random and fixed effects
+
+options(contrasts= c("contr.sum","contr.poly"))
+
+repro$Random <- paste0(repro$Year, repro$Trial) # this is a little trick to specify a nested factor, 
+                                             # it will combine year and trial into one, then just
+                                             # use it as the random effect below (Random)
+
+m <- lmer(egg.week ~ Treatment*Year*avg.inhab + (1|Random) + (1|Random:Treatment) +
+            (1|Random:avg.inhab) + (1|Random:Treatment:avg.inhab), REML=F, repro)
+summary(m)
+anova(m, type=3) # check the df!! The output should be the same as when using the nlme package
+logLik(m)
+
+m.1 <- update(m, .~. -(1|Random:Treatment:avg.inhab))
+summary(m.1)
+anova(m.1, type=3)
+logLik(m.1)
+
+2*(logLik(m) - logLik(m.1)) # Chi2 =  -2.185038e-08
+pchisq(2*(logLik(m) - logLik(m.1)), df = 1, lower.tail=F) # P = 1
+
+#trying agin with year.fact
+
+repro$Random <- paste0(repro$Year.fact, repro$Trial) # this is a little trick to specify a nested factor, 
+# it will combine year and trial into one, then just
+# use it as the random effect below (Random)
+
+m.new.with.int <- lmer(egg.week ~ Treatment*Year.fact*avg.inhab + (1|Random) + (1|Random:Treatment), REML=F, repro)
+hist(resid(m.new.with.int))
+summary(m.new.with.int)
+anova(m, type=3) # check the df!! The output should be the same as when using the nlme package
+logLik(m)
+
+m.1 <- update(m, .~. -(1|Random:Treatment:avg.inhab))
+summary(m.1)
+anova(m.1, type=3)
+logLik(m.1)
+
+2*(logLik(m) - logLik(m.1)) # Chi2 =  -2.185038e-08
+pchisq(2*(logLik(m) - logLik(m.1)), df = 1, lower.tail=F) # P = 1
+
+#visualizing data from each trial individually####
+
+library(patchwork) #allows me to easily arrange multiple plots
+# - for visual comparison
+
+#subsetting into different df's based on trial
+
+repro$treat.ordered<-ordered(repro$Treatment,levels=c("Low","Medium","High"))
+
+# based on variable values
+t1 <- repro[ which(repro$Trial==1),]
+
+p1<-ggplot(t1, aes(avg.inhab, egg.week, shape=treat.ordered, linetype=treat.ordered, col=treat.ordered)) +
+  geom_smooth(method="lm", se=FALSE, show.legend = TRUE)  +
+  geom_point(size=3)+
+  theme_classic()+
+  labs(x="Gobies per Reef",y=(expression(atop("Reproductive Output", 
+                                              paste((eggs~laid~reef^-1))))))+
+  expand_limits(y=0)+
+  scale_color_manual(values=c("black", "#666666", "grey"))+
+  scale_linetype_manual(values=c("solid", "dashed", "twodash"))+
+  theme(axis.text.x=element_text(size=20, colour="black"),
+        axis.text.y=element_text(size=20, colour="black"), 
+        axis.title=element_text(size=20))+
+  theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0)), 
+        axis.title.x = element_text(margin = margin(t = 12, r = 0, b = 0, l = 0)), 
+        axis.text.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))) +
+  theme(legend.text=element_text(size=18)) +
+  theme(legend.title =element_text(size=20))+
+#  scale_x_continuous(breaks=c(10,12,14,16,18,20)) + scale_y_continuous(limits = c(0,40000))+
+  labs(color  = "Perceived Risk", linetype = "Perceived Risk", shape = "Perceived Risk")
+p1
+
+t2<- repro[ which(repro$Trial==2),]
+
+p2<-ggplot(t2, aes(avg.inhab, egg.week, shape=treat.ordered, linetype=treat.ordered, col=treat.ordered)) +
+  geom_smooth(method="lm", se=FALSE, show.legend = TRUE)  +
+  geom_point(size=3)+
+  theme_classic()+
+  labs(x="Gobies per Reef",y=(expression(atop("Reproductive Output", 
+                                              paste((eggs~laid~reef^-1))))))+
+  expand_limits(y=0)+
+  scale_color_manual(values=c("black", "#666666", "grey"))+
+  scale_linetype_manual(values=c("solid", "dashed", "twodash"))+
+  theme(axis.text.x=element_text(size=20, colour="black"),
+        axis.text.y=element_text(size=20, colour="black"), 
+        axis.title=element_text(size=20))+
+  theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0)), 
+        axis.title.x = element_text(margin = margin(t = 12, r = 0, b = 0, l = 0)), 
+        axis.text.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))) +
+  theme(legend.text=element_text(size=18)) +
+  theme(legend.title =element_text(size=20))+
+  #  scale_x_continuous(breaks=c(10,12,14,16,18,20)) + scale_y_continuous(limits = c(0,40000))+
+  labs(color  = "Perceived Risk", linetype = "Perceived Risk", shape = "Perceived Risk")
+p2
+
+t3<- repro[ which(repro$Trial==3),]
+
+p3<-ggplot(t3, aes(avg.inhab, egg.week, shape=treat.ordered, linetype=treat.ordered, col=treat.ordered)) +
+  geom_smooth(method="lm", se=FALSE, show.legend = TRUE)  +
+  geom_point(size=3)+
+  theme_classic()+
+  labs(x="Gobies per Reef",y=(expression(atop("Reproductive Output", 
+                                              paste((eggs~laid~reef^-1))))))+
+  expand_limits(y=0)+
+  scale_color_manual(values=c("black", "#666666", "grey"))+
+  scale_linetype_manual(values=c("solid", "dashed", "twodash"))+
+  theme(axis.text.x=element_text(size=20, colour="black"),
+        axis.text.y=element_text(size=20, colour="black"), 
+        axis.title=element_text(size=20))+
+  theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0)), 
+        axis.title.x = element_text(margin = margin(t = 12, r = 0, b = 0, l = 0)), 
+        axis.text.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))) +
+  theme(legend.text=element_text(size=18)) +
+  theme(legend.title =element_text(size=20))+
+  #  scale_x_continuous(breaks=c(10,12,14,16,18,20)) + scale_y_continuous(limits = c(0,40000))+
+  labs(color  = "Perceived Risk", linetype = "Perceived Risk", shape = "Perceived Risk")
+p3
+
+t4<- repro[ which(repro$Trial==4),]
+
+p4<-ggplot(t4, aes(avg.inhab, egg.week, shape=treat.ordered, linetype=treat.ordered, col=treat.ordered)) +
+  geom_smooth(method="lm", se=FALSE, show.legend = TRUE)  +
+  geom_point(size=3)+
+  theme_classic()+
+  labs(x="Gobies per Reef",y=(expression(atop("Reproductive Output", 
+                                              paste((eggs~laid~reef^-1))))))+
+  expand_limits(y=0)+
+  scale_color_manual(values=c("black", "#666666", "grey"))+
+  scale_linetype_manual(values=c("solid", "dashed", "twodash"))+
+  theme(axis.text.x=element_text(size=20, colour="black"),
+        axis.text.y=element_text(size=20, colour="black"), 
+        axis.title=element_text(size=20))+
+  theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0)), 
+        axis.title.x = element_text(margin = margin(t = 12, r = 0, b = 0, l = 0)), 
+        axis.text.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))) +
+  theme(legend.text=element_text(size=18)) +
+  theme(legend.title =element_text(size=20))+
+  #  scale_x_continuous(breaks=c(10,12,14,16,18,20)) + scale_y_continuous(limits = c(0,40000))+
+  labs(color  = "Perceived Risk", linetype = "Perceived Risk", shape = "Perceived Risk")
+p4
+
+t5<- repro[ which(repro$Trial==5),]
+
+p5<-ggplot(t5, aes(avg.inhab, egg.week, shape=treat.ordered, linetype=treat.ordered, col=treat.ordered)) +
+  geom_smooth(method="lm", se=FALSE, show.legend = TRUE)  +
+  geom_point(size=3)+
+  theme_classic()+
+  labs(x="Gobies per Reef",y=(expression(atop("Reproductive Output", 
+                                              paste((eggs~laid~reef^-1))))))+
+  expand_limits(y=0)+
+  scale_color_manual(values=c("black", "#666666", "grey"))+
+  scale_linetype_manual(values=c("solid", "dashed", "twodash"))+
+  theme(axis.text.x=element_text(size=20, colour="black"),
+        axis.text.y=element_text(size=20, colour="black"), 
+        axis.title=element_text(size=20))+
+  theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0)), 
+        axis.title.x = element_text(margin = margin(t = 12, r = 0, b = 0, l = 0)), 
+        axis.text.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))) +
+  theme(legend.text=element_text(size=18)) +
+  theme(legend.title =element_text(size=20))+
+  #  scale_x_continuous(breaks=c(10,12,14,16,18,20)) + scale_y_continuous(limits = c(0,40000))+
+  labs(color  = "Perceived Risk", linetype = "Perceived Risk", shape = "Perceived Risk")
+p5
+
+t6<- repro[ which(repro$Trial==6),]
+
+p6<-ggplot(t6, aes(avg.inhab, egg.week, shape=treat.ordered, linetype=treat.ordered, col=treat.ordered)) +
+  geom_smooth(method="lm", se=FALSE, show.legend = TRUE)  +
+  geom_point(size=3)+
+  theme_classic()+
+  labs(x="Gobies per Reef",y=(expression(atop("Reproductive Output", 
+                                              paste((eggs~laid~reef^-1))))))+
+  expand_limits(y=0)+
+  scale_color_manual(values=c("black", "#666666", "grey"))+
+  scale_linetype_manual(values=c("solid", "dashed", "twodash"))+
+  theme(axis.text.x=element_text(size=20, colour="black"),
+        axis.text.y=element_text(size=20, colour="black"), 
+        axis.title=element_text(size=20))+
+  theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0)), 
+        axis.title.x = element_text(margin = margin(t = 12, r = 0, b = 0, l = 0)), 
+        axis.text.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))) +
+  theme(legend.text=element_text(size=18)) +
+  theme(legend.title =element_text(size=20))+
+  #  scale_x_continuous(breaks=c(10,12,14,16,18,20)) + scale_y_continuous(limits = c(0,40000))+
+  labs(color  = "Perceived Risk", linetype = "Perceived Risk", shape = "Perceived Risk")
+p6
+
+#patching them together in one frame
+
+p1 + p2 + p3 + p4 + p5 + p6 # too big for frame
+
+png("Output/repro.trials.stacked.egg.week.png", width = 15, height = 10, units = 'in', res = 300)
+(p1 / p2 / p3) | (p4 / p5 / p6)
+dev.off()
+
