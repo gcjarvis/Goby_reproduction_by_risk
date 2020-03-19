@@ -26,6 +26,7 @@ options(contrasts = c("contr.sum","contr.poly")) #this is important, run before 
 repro<-read.csv("Data/new.data.2019.9.30.csv")
 repro<-na.omit(repro) # no NA's to omit
 
+#basic data viz
 pairs(repro) #pretty cool to see correlations
 
 #data manipulation####
@@ -514,4 +515,23 @@ p1 + p2 + p3 + p4 + p5 + p6 # too big for frame
 png("Output/repro.trials.stacked.egg.week.png", width = 15, height = 10, units = 'in', res = 300)
 (p1 / p2 / p3) | (p4 / p5 / p6)
 dev.off()
+
+# trying to see if I can reproduce the SYSTAT results in R 2020.3.19####
+
+#using lme4 package
+moda<-lmer(egg.week~Treatment*Year.fact*avg.inhab+(1|Year.fact/Trial),data=repro)
+hist(resid(moda))
+qqnorm(resid(moda))
+qqline(resid(moda))
+anova(moda)
+Anova(moda)
+summary(moda) # not doing it right, denDF are incorrrect
+
+#going to try out some different models with nlme package
+# - in Zurr et al. 2009 book on mixed models in R
+
+mod1<-lme(egg.week~Treatment*Year, random = ~1 + Year|Trial, data = repro)
+summary(mod1)
+anova(mod1)
+
 
