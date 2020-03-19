@@ -47,6 +47,10 @@ behave$Year.fact<- as.factor(behave$Year)
 #using the average number of inhabitants per reef as the covariate
 behave$avg.inhab<-(ceiling((behave$Recollection+20)/2))
 
+#exporting data
+
+write.csv(behave,"Data\\behavioral.data.with.avg.inhab", row.names = FALSE)
+
 #modeling for each behavior####
 
 #proportion of time exposed####
