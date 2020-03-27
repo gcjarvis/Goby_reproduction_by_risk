@@ -534,4 +534,23 @@ mod1<-lme(egg.week~Treatment*Year, random = ~1 + Year|Trial, data = repro)
 summary(mod1)
 anova(mod1)
 
+#testing out other models with the info from B Bolker's mixed model markdown####
+#rationale: want to see if I can recreate SYSTAT output in R, meaning I want to 
+# - see if I can get the correct error df for the fixed effect of treatment
 
+# - https://bbolker.github.io/mixedmodels-misc/glmmFAQ.html, specifically in the
+# - "model definition --> "model speciofication" section
+
+# intercept varying among sites and among blocks within sites (nested random effects)
+
+emod<-lmer(egg.week~Treatment*Year+avg.inhab+(Treatment|Trial/Year),repro,method='ML')
+summary(emod) #got some error messages
+anova(emod)# not the same, still a lot of error df in treatment
+
+emod<-lmer(egg.week~Treatment*Year*avg.inhab+(1|Trial/Year),repro,method='ML')
+
+
+emod1<-lme(egg.week~Treatment*Year+avg.inhab,random=~-1+Treatment|Trial/Year,repro,method='REML')
+summary(emod)
+anova(emod)
+Anova(emod)
