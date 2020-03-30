@@ -547,10 +547,31 @@ emod<-lmer(egg.week~Treatment*Year+avg.inhab+(Treatment|Trial/Year),repro,method
 summary(emod) #got some error messages
 anova(emod)# not the same, still a lot of error df in treatment
 
-emod<-lmer(egg.week~Treatment*Year*avg.inhab+(1|Trial/Year),repro,method='ML')
+emod<-lmer(egg.week~Treatment*Year*avg.inhab+(1|Treatment:Trial),repro,method='ML')
 
 
-emod1<-lme(egg.week~Treatment*Year+avg.inhab,random=~-1+Treatment|Trial/Year,repro,method='REML')
+emod1<-lmer(egg.week~Treatment*Year+avg.inhab+(1|Treatment:Year:Trial),repro,REML=FALSE)
+summary(emod1)
+anova(emod1)
+
+emod2<-lme(egg.week~Treatment*Year+avg.inhab, random=~1+Treatment|Trial/Year,repro,method='ML')
+summary(emod2)
+anova(emod2)
+
+#attempting to remodel and compare model output between SYSTAT and R (full models first)
+
+emod<-lmer(egg.week~Treatment*Year*avg.inhab+(1|Trial/Year),repro,REML=FALSE)
 summary(emod)
 anova(emod)
-Anova(emod)
+
+emoda<-lmer(egg.week~Treatment*Year*avg.inhab+(Treatment|Trial:Year),repro,REML = FALSE)
+summary(emoda)
+
+emodb<-lmer(egg.week~Treatment*Year*avg.inhab+(Treatment|Trial/Year),repro,REML = FALSE)
+summary(emodb)
+anova(emodb)
+
+emodc<-lmer(egg.week~Treatment*Year*avg.inhab+(Treatment*Trial+(Treatment|Trial:Year)),repro,REML = FALSE)
+summary(emodc)
+anova(emodc)
+
