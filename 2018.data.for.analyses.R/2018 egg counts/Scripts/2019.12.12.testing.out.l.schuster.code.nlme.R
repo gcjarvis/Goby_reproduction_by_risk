@@ -575,3 +575,88 @@ emodc<-lmer(egg.week~Treatment*Year*avg.inhab+(Treatment*Trial+(Treatment|Trial:
 summary(emodc)
 anova(emodc)
 
+#2020.4.5 testing out new nesting code in lmer ####
+
+#start with full model, and also want to include nested interactions with covariate
+
+emodx<-lmer(egg.week~Treatment*Year*avg.inhab+(Treatment|Year/Trial),repro,REML=FALSE)
+summary(emodx)
+anova(emodx)
+
+#same thing but with different syntax, because sometimes the nesting operator does not
+## work correctly
+
+emodxi<-lmer(egg.week~Treatment*Year*avg.inhab+(Treatment|Year) + (Treatment|Year:Trial),
+           repro,REML=FALSE)
+summary(emodxi)
+anova(emodxi)
+Anova(emodxi)
+
+#specifying the interactions of treatment x trial(year)
+## and adding in the effects of the interaction between avg.ihab*Treatment*Trial
+
+#---
+
+#email from Steve on 2020.3.31
+
+#So, because you listed every trial with a unique identifier in the structure of the data file, it is already explicitly crossed with risk and nested  in Year. So, the question is to how to specify the interaction between Treatment x Trial(Year). Either of these should work:
+#  (1 | Trial:Treatment)   # or if that doesn't work in case it doesn't like an interaction term as a grouping factor (sometimes that works for me, sometimes it doesn't), then do the following:
+
+#new_variable<- Trial:Treatment   # make a new variable that is a compound of the other two
+#(1 | new_variable)     # now you have a single grouping factor with all the levels of the interaction.
+
+#Looking at the plots you sent weeks ago for how the risk treatments show different slopes with goby number in different trials, then arguably you should be estimating separate slopes [vs goby number] for risk treatments in different trials. You can estimate random slopes that are either correlated with the intercepts of each trial, or independently of each trial intercept in the following way:
+#  (Goby | new_variable)   # This gives you correlated slopes and intercepts for each risk treatment in each trial
+
+#(Goby || new_variable)   # This gives you uncorrelated slopes and intercepts and is therefore equal to
+#(1 | new_variable) + (0 + Goby | new_variable)  # it can also be written as
+#(1 | new_variable) + (Goby - 1 | new_variable)
+
+#---
+
+#converting trial to a factor to use in first suggestion from Steve
+repro$Trial.factor<-as.factor(repro$Trial)
+
+new_variable<- repro$Trial.factor:repro$Treatment #not as simple as this
+View(new_variable)
+
+emodx1<-lmer(egg.week~Treatment*Year*avg.inhab+(1|new_variable),repro,REML=TRUE)
+summary(emodx1)
+anova(emodx1)
+
+# adding in avg.inhab, testing correlated vs. uncorrelated slopes and intercepts
+
+#correlated slopes
+emodx1<-lmer(egg.week~Treatment*Year*avg.inhab+(1|new_variable)
+             + (avg.inhab|new_variable),repro,REML=TRUE)
+summary(emodx1)
+anova(emodx1)
+
+#uncorrelated slopes
+emodx2<-lmer(egg.week~Treatment*Year*avg.inhab+(1|new_variable)
+             + (avg.inhab||new_variable),repro,REML=TRUE)
+summary(emodx2)
+anova(emodx2)
+
+#will try with the interaction as the grouping factor: (1 | Trial:Treatment) 
+
+emodxii<-lmer(egg.week~Treatment*Year*avg.inhab+(1|Trial:Treatment),repro,REML=TRUE)
+summary(emodxii)
+anova(emodxii)
+
+#curious, now year is significant? Might not stay that way if I reduce the model
+
+#adding in the effect of avg.inhab, first with correlated, then with uncorrelated intercepts
+
+emodxiii<-lmer(egg.week~Treatment*Year*avg.inhab+(1|Trial:Treatment) + (avg.inhab|Trial:Treatment),
+                repro,REML=TRUE)
+summary(emodxiii)
+anova(emodxiii)
+
+#including avg.inhab with uncorrelated slopes and intercepts
+
+emodxiv<-lmer(egg.week~Treatment*Year*avg.inhab+(1|Trial:Treatment) + (avg.inhab||Trial:Treatment),
+               repro,REML=TRUE)
+summary(emodxiv)
+anova(emodxiv)
+
