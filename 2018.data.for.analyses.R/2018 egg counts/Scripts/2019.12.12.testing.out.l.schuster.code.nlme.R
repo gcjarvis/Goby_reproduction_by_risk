@@ -37,6 +37,7 @@ repro$avg.inhab<-(ceiling((repro$Recollection+20)/2))
 repro$Year <- ifelse(repro$Trial <=3, 2017, 2018)
 #want it as a factor? Going to make a variable with it as a factor, run the model, and see if I get different results
 repro$Year.fact<- as.factor(repro$Year)
+repro$Trial.fact<-as.factor(repro$Trial)
 
 #adding egg/week variable to the dataset
 repro<-repro %>%
@@ -659,4 +660,123 @@ emodxiv<-lmer(egg.week~Treatment*Year*avg.inhab+(1|Trial:Treatment) + (avg.inhab
                repro,REML=TRUE)
 summary(emodxiv)
 anova(emodxiv)
+
+# 2020.4.6 chat with lukas#####
+#new variable that combines trial and year
+repro$Random <- paste0(repro$Trial.fact, repro$Year.fact)
+View(repro$Random)
+repro$Random.fact<-as.factor(repro$Random)
+
+#full model
+#raw egg counts
+lukas.mod<-lmer(egg.week~Treatment*Year*avg.inhab+(1|Random.fact)+(1|Treatment:Random.fact)
+                + (1|avg.inhab:Treatment:Random.fact)+(1|avg.inhab:Random.fact),repro,REML=F)
+
+#sqrt-transformed egg counts
+lukas.mod<-lmer(sqrt(egg.week)~Treatment*Year*avg.inhab+(1|Random.fact)+(1|Treatment:Random.fact)
+                + (1|avg.inhab:Treatment:Random.fact)+(1|avg.inhab:Random.fact),repro,REML=F)
+
+hist(resid(lukas.mod))
+qqnorm(resid(lukas.mod))
+qqline(resid(lukas.mod))
+plot(lukas.mod)
+
+anova(lukas.mod, type = 3)
+summary(lukas.mod)
+
+#dropping 3-way interaction with random effects
+lukas.mod1 <- update(lukas.mod, .~. -(1|avg.inhab:Treatment:Random.fact))
+hist(resid(lukas.mod1))
+qqnorm(resid(lukas.mod1))
+qqline(resid(lukas.mod1))
+plot(lukas.mod1)
+anova(lukas.mod1)
+summary(lukas.mod1)
+
+#chi-square test comparing models, log-likelihood
+logLik(lukas.mod) #'log Lik.' -986.9818 (df=17)
+
+logLik(lukas.mod1) #'log Lik.' -986.9818 (df=16)
+
+#compare logLik of full model to that of reduced model
+
+2 * (logLik(lukas.mod) - logLik(lukas.mod1)) #chi2 = -2.185584e-08 (df=17)
+pchisq(2 * (logLik(lukas.mod) - logLik(lukas.mod1)), df=1, lower.tail = F)
+# chi2 = -2.185584e-08, p = 1
+anova(lukas.mod)
+
+#same analysis, but with year as trial as factors
+
+2 * (logLik(egg.mmff) - logLik(regg.f)) #chi2 = 1.844638
+pchisq(2 * (logLik(egg.mmff) - logLik(regg.f)), df=1, lower.tail = F)
+# chi2 = 1.844638, p = 0.1744083
+
+#same result = thank god
+
+#testing out code from L. Shuster to see if there are interactions with
+# - the random and fixed effects
+
+options(contrasts= c("contr.sum","contr.poly"))
+
+repro$Random <- paste0(repro$Year, repro$Trial) # this is a little trick to specify a nested factor, 
+# it will combine year and trial into one, then just
+# use it as the random effect below (Random)
+
+m <- lmer(egg.week ~ Treatment*Year*avg.inhab + (1|Random) + (1|Random:Treatment) +
+            (1|Random:avg.inhab) + (1|Random:Treatment:avg.inhab), REML=F, repro)
+summary(m)
+anova(m, type=3) # check the df!! The output should be the same as when using the nlme package
+logLik(m)
+
+m.1 <- update(m, .~. -(1|Random:Treatment:avg.inhab))
+summary(m.1)
+anova(m.1, type=3)
+logLik(m.1)
+
+2*(logLik(m) - logLik(m.1)) # Chi2 =  -2.185038e-08
+pchisq(2*(logLik(m) - logLik(m.1)), df = 1, lower.tail=F) # P = 1
+
+#trying agin with year.fact
+
+repro$Random <- paste0(repro$Year.fact, repro$Trial) # this is a little trick to specify a nested factor, 
+# it will combine year and trial into one, then just
+# use it as the random effect below (Random)
+
+m.new.with.int <- lmer(egg.week ~ Treatment*Year.fact*avg.inhab + (1|Random) + (1|Random:Treatment), REML=F, repro)
+hist(resid(m.new.with.int))
+summary(m.new.with.int)
+anova(m, type=3) # check the df!! The output should be the same as when using the nlme package
+logLik(m)
+
+m.1 <- update(m, .~. -(1|Random:Treatment:avg.inhab))
+summary(m.1)
+anova(m.1, type=3)
+logLik(m.1)
+
+2*(logLik(m) - logLik(m.1)) # Chi2 =  -2.185038e-08
+pchisq(2*(logLik(m) - logLik(m.1)), df = 1, lower.tail=F) # P = 1
+
+
+
+#next removing the treatment*Random (trial(year) interaction)
+
+#--------2020.4.6 clean slate------------####
+#can't do anything until I figure out if my model is being analyzed correctly in R
+
+#using information from https://stat.ethz.ch/pipermail/r-sig-mixed-models/2014q4/022840.html
+## on how to code an interaction between fixed and random effects
+
+#using lmer, given that Trial(Year) is already specified, given the way that I coded Trial
+
+#need to start simple, but should still be using the "anova" function with my models to see if I can get similar
+
+
+
+
+
+
+
+
+
+
 
