@@ -47,6 +47,7 @@ repro<-repro %>%
 
 #exporting wrangled data
 write.csv(repro,"Data\\egg.counts.2019.12.23.csv", row.names = FALSE)
+write.csv(repro,"Data\\egg.counts.2020.4.7.csv", row.names = FALSE)
 
 #subsetting data to do t6 comparison between HR caged and uncaged treatments
 #subset trial
@@ -769,14 +770,228 @@ pchisq(2*(logLik(m) - logLik(m.1)), df = 1, lower.tail=F) # P = 1
 #using lmer, given that Trial(Year) is already specified, given the way that I coded Trial
 
 #need to start simple, but should still be using the "anova" function with my models to see if I can get similar
+## results to what I'm seeing in SYSTAT, at least in terms of denDF
+
+#comparing results with data for raw egg counts first, denDF shouldn't change based on transformed vs. raw data
+
+me<-lmer(egg.week ~ Treatment*Year.fact*avg.inhab + (1|Year.fact:Trial.fact) + (1|Treatment:Year.fact:Trial.fact) +
+                (1|avg.inhab:Year.fact:Trial.fact) + (1|Treatment:avg.inhab:Year.fact:Trial.fact), REML=F, repro)
+summary(me)
+anova(me) #Okay, this seems to be estimating denDF for year, avg.inhab, and avg.inhab*year sort of correctly
+#but there are tons of error messages
+coef(me)
+
+me1.1<-lmer(egg.week ~ Treatment*Year*avg.inhab + (1|Trial) + (1|Treatment:Trial) +
+                  (avg.inhab||Trial) + (avg.inhab||Treatment:Trial), REML=TRUE, repro)
+summary(me1.1)
+anova(me1.1)
+coef(me1.1)
+
+#going to try some other notation
+me1<-lmer(egg.week ~ Treatment*Year*avg.inhab + (1|Random) + (0+Treatment|Random) +
+           (1|avg.inhab:Random) + (0+Treatment|avg.inhab:Random), REML=F, repro)
+summary(me1)
+anova(me1)
+
+#more notation changes
+me2<-lmer(egg.week ~ Treatment*Year*avg.inhab + (1|Trial) + (1|Treatment:Trial) +
+            (1|Trial:avg.inhab), REML=TRUE, repro)
+summary(me2)
+anova(me2)
+
+#more
+coef(me2)
+
+#I sort of want to try and build my model from the bottom up to see if I can affect the df for treatment
+m1<-lmer(egg.week~Treatment+(1|Trial),repro,REML=F)
+summary(m1)
+anova(m1)
+coef(m1)
+
+m2<-lmer(egg.week~Treatment*Year+(1|Trial)+(0+Treatment|Trial),repro,REML=F)
+summary(m2)
+anova(m2)
+coef(m2)
+
+#maybe things get resolved with a fully-reduced model? no...
+
+#I found a source that explains that when the Treatment*Trial(Year) term doesn't have that large of an effect, then the error for that
+## term has less of a proportional effect over teh residual effect
+
+#Because the variance associated with the interaction is essentially zero (in the presence of the subnum random main-effect) 
+##the interaction term has no effect on the calculation of denominator degrees of freedom, F-values and p-values:
+
+#anova(model3, type=1)
+#Type I Analysis of Variance Table with Satterthwaite's method
+#Sum Sq Mean Sq NumDF DenDF F value Pr(>F)
+#group           12065.3 12065.3     1    18  2.4334 0.1362
+#direction        1951.8  1951.8     1  5169  0.3936 0.5304
+#group:direction 11552.2 11552.2     1  5169  2.3299 0.1270
+
+#However, subnum:direction is the enclosing error stratum for subnum 
+## so if we remove subnum all the associated SSQ falls back into subnum:direction
 
 
 
+mred<-lmer(egg.week~Treatment+(1|Trial),repro)
+hist(resid(mred))
+qqnorm(resid(mred))
+qqline(resid(mred))
+summary(mred)
+anova(mred, type = 1)
+coef(mred)
+
+# reading through the Bates et al. 2015 paper on lme4, this could be where I break through ####
+
+#going through the different modules (n=4) in lme4, not sure what this will show, but might help me understand which parameters
+## are important in my model?
+
+#not sure what these do
+
+#parsedFormula <- lFormula(formula = Reaction ~ Days + (Days | Subject), + data = sleepstudy)
+
+#module 1 - formula module
+parsedFormula <- lFormula(formula = egg.week~Treatment*Year.fact*avg.inhab + (1|Trial.fact) + (1|Treatment:Trial.fact) +
+                            (1|Trial:avg.inhab)+(1|avg.inhab:Treatment:Trial.fact), REML=F, repro)
+summary(parsedFormula)
+
+# 2 - objective function module
+#R> devianceFunction <- do.call(mkLmerDevfun, parsedFormula)
+
+devianceFunction <- do.call(mkLmerDevfun, parsedFormula)
 
 
 
+#found out that I have to include Year as "Year.fact", in order to make sure that model is scaled correctly
 
+#model structure 1: all slopes are the same (effcets are the same among trials), but intercepts are random (magnitude differs)
+## Note: have to use REML=FALSE if you want to compare models with log-likelihood ratio tests (Pinheiro & Bates, 2000; Bolker et al., 2009)
 
+me<-lmer(egg.week ~ Treatment*Year.fact*avg.inhab + (1|Trial.fact) + (1|Treatment:Trial.fact) +
+           (1|Trial.fact:avg.inhab)+(1|avg.inhab:Treatment:Trial.fact), REML=F, repro)
+summary(me)
+anova(me) #Okay, this seems to be estimating denDF for year, avg.inhab, and avg.inhab*year sort of correctly
+#but there are tons of error messages
+coef(me)
 
+me2<-update(me, .~. -(1|avg.inhab:Treatment:Trial.fact))
+summary(me2)
+anova(me2) #Okay, this seems to be estimating denDF for year, avg.inhab, and avg.inhab*year sort of correctly
+#but there are tons of error messages
+coef(me2)
 
+anova(me,me2) #no difference in models when three-waty interaction with random intercept is removed
 
+#next logical removal is the 1|treatment:trial term
+
+me3<-update(me2, .~. -(1|Treatment:Trial.fact))
+summary(me3)
+anova(me3)
+
+anova(me2,me3) #no difference
+
+#next logical removal is the 1|Trial:avg.inhab term, but I'm skeptical to take that out b/c it accounts for 12% of the
+## residual variance in random effects (in fact, there's more variance attributed to this term than trial alone)
+## fortunately, can test whwether it makes sense to remove that term with log-likelihood test comapring m3 with m4
+
+#the key question will be whether to evaluate the effect of avg.inhab with random slope (different effect of covariate among trials),
+## and random intercept (same effect of covariate, but different magnitude among trials)
+
+#should compare model with avg.inhab|Trial.fact vs. 1|Trial:avg.inhab and see what log-likelihood shows
+
+me4<-update(me3, .~. -(1|Trial:avg.inhab)) #all interactions with covariate that were N.S. were removed, including random effects
+## in fact, it may put more variance in the overall model, including variance for fixed effects
+summary(me4) # trial accounts for 6% of the residual variance
+anova(me4)
+
+anova(me3,me4) # P = 0.3939, doesn't suggest any differnce due to the dropping of the random effect of Trial:avg.inhab
+
+#so, decided to leave the random factor of 1|Trial in the model, after removing all other nonsignificant randm effects at P>0.25
+## as tested for with log-likelihood tests
+#NOTE: this model structure assumes all random effects had random intercepts (1|Random...), but not random slopes among trials
+
+#okay, now doing the same thing with fixed factors, going to start with highest-order interactions with the covariate
+
+me5<-update(me4, .~. -(Treatment:Year.fact:avg.inhab))
+summary(me5) # trial accounts for 6% of the residual variance
+anova(me5)
+
+anova(me4,me5)# P = 0.5013
+
+#now removing Year.fact:avg.inhab (the order of removal seems arbitrary, but that's the next one)
+me6<-update(me5, .~. -(Year.fact:avg.inhab))
+summary(me6) # trial variance is still 6% of residual variance for random effects
+anova(me6)
+
+anova(me5,me6)# P = 0.779
+
+#now want to take out Treatment:avg.inhab
+
+me7<-update(me6, .~. -(Treatment:avg.inhab))
+summary(me7) # trial variance is still 6% of residual variance for random effects
+anova(me7)
+
+anova(me6,me7)# P = 0.7064
+
+#can go with the results from the anova(me7) table. These are the results that I will report in the paper for the fully-reduced model
+
+#that's it, no difference in models, but just to make sure we're doing this correctly, let's remove avg.inhab and see what happens
+## should see a sig. log-likelihood result
+me8<-update(me7, .~. -(avg.inhab))
+summary(me8) # residual variance for random effects just shot up a ton (soaked up all variance from avg.inhab)
+anova(me8)
+
+anova(me7,me8)# P = 7e-10 ***, super significant, so don't want to remove that term
+
+#not done yet...
+
+#next step will be to go back and rewrite the model where the slope for avg.inhab AND the intercept for avg.inhab is random
+
+#the point that I'm not sure about is whether to code the interactions as avg.inhab|Trial, or as avg.inhab|avg.inhab:Trial
+
+# it seems to me that it is redundant, and that I might want to include avg.inhab|Trial in addition to 1|avg.inhab:Trial
+
+lme(y ~ time * tx, 
+    random = list(therapist = ~time * tx, 
+                  subjects = ~time),
+    data=df)
+
+newmod<-lme(egg.week~Treatment*Year.fact*avg.inhab, 
+            random=list(Trial.fact=~1,Trial.fact:avg.inhab=~1),data=repro, method="ML")
+
+#comparing lme to lmer models ####
+# have to put all of the interactions into single terms so that I can list them in 
+repro$trial_inhab_treatment<-paste0(repro$Trial.fact,repro$avg.inhab,repro$Treatment)
+repro$trial_treatment<-paste0(repro$Trial.fact,repro$Treatment)
+repro$trial_inhab<-paste0(repro$Trial.fact,repro$avg.inhab)
+#View(repro$trial_inhab)
+
+#maybe if avg.inhab were a factor?
+repro$trial_inhab_factor_treatment<-paste0(repro$Trial.fact,as.factor(repro$avg.inhab),repro$Treatment)
+repro$trial_treatment<-paste0(repro$Trial.fact,repro$Treatment)
+repro$trial_inhab_factor<-paste0(repro$Trial.fact,as.factor(repro$avg.inhab))
+
+#full model
+newmod<-lme(egg.week~Treatment*Year.fact*avg.inhab, 
+            random=list(Trial.fact=~1,trial_treatment=~1,trial_inhab=~1,trial_inhab_treatment=~1),data=repro, method="ML")
+summary(newmod)
+anova(newmod)
+#seems like there's something going on with the trial_inhab term, and that's why the models aren't the same, and also why all terms
+## that have avg.inhab included in them do not have lower dendf
+
+newmod1<-lme(egg.week~Treatment*Year.fact*avg.inhab, 
+            random=list(Trial.fact=~1,trial_treatment=~1,trial_inhab_factor=~1,trial_inhab_factor_treatment=~1),data=repro, method="ML")
+summary(newmod1)
+anova(newmod1)
+
+#now want to go back and chack the full model with all of the random effects to see if denom df are correct!
+
+#lmer full model
+me<-lmer(egg.week ~ Treatment*Year.fact*avg.inhab + (1|Trial.fact) + (1|Treatment:Trial.fact) +
+           (1|Trial.fact:avg.inhab)+(1|avg.inhab:Treatment:Trial.fact), REML=F, repro)
+summary(me)
+anova(me) #Okay, this seems to be estimating denDF for year, avg.inhab, and avg.inhab*year sort of correctly
+#but there are tons of error messages
+#coef(me)
+
+#SUMMARY: not entirely the same, although it does have a closer df 
