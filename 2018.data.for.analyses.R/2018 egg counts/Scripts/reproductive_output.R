@@ -1,36 +1,29 @@
-# Description: testing lukas's code for nlme nested design vs. my previous models
+# Description: Script for reproductive output from Jarvis and Steele 
 # Author: George C Jarvis
-# Date: Thu Dec 12 23:12:13 2019
-# Notes: Lukas seems to think that this will be better for my nested ANCOVA models
-#       for egg counts. We'll see.  I want to compare results for both models
+# Date: Thu Apr 09 15:14:09 2020
+# Notes:
 # --------------
 
 rm(list=ls())
 
-library(sciplot)
 library(lme4)
-library(car)
 library(lmerTest)
 library(dplyr)
 library(ggplot2)
-library(MASS)
-library(nlme)
-library(pwr)
-library(HH)#for ancova and plots
-library(vegan)
-library(multcomp)
 library(visreg) #visualizing linear models
 
 options(contrasts = c("contr.sum","contr.poly")) #this is important, run before ANOVA, will set SS to type III
 
 #importing dataset, adding number of gobies on each reef, ordering treatments####
-repro<-read.csv("Data/new.data.2019.9.30.csv")
-repro<-na.omit(repro) # no NA's to omit
+repro<-read.csv("Data/goby_reproduction.2020.4.9.csv")
 
 #basic data viz
 pairs(repro) #pretty cool to see correlations
 
 #data manipulation####
+
+#sqrt-transforming egg counts
+
 #adding column for average density, rounded to nearest whole number of fish
 repro$avg.inhab<-(ceiling((repro$Recollection+20)/2))
 
@@ -78,7 +71,7 @@ anova(mod2.luk, type='marginal')
 
 #running reduced model
 mod2.1.luk<-lme(egg.week~(Treatment*Year.fact)+(avg.inhab*Year.fact)+(Treatment*avg.inhab)+ Treatment+
-               avg.inhab+Year.fact,random=~1|Trial,repro,method="REML")
+                  avg.inhab+Year.fact,random=~1|Trial,repro,method="REML")
 summary(mod2.1.luk)
 anova(mod2.1.luk, type='marginal')
 
@@ -165,8 +158,8 @@ mod2.2.luk<-lme(egg.week~(Treatment*Year.fact)+ Treatment+
 # I got the same results when I ran it this way, so I'm assuming that R
 # - is nesting Trial within year.fact properly
 mod2.2.1.luk<-lme(fixed= egg.week~(Treatment*Year.fact)+ Treatment+
-                avg.inhab+Year.fact,random=~1|Trial,
-                weights = varIdent((form=~1|Year.fact)) ,repro,method="REML")
+                    avg.inhab+Year.fact,random=~1|Trial,
+                  weights = varIdent((form=~1|Year.fact)) ,repro,method="REML")
 
 
 summary(mod2.2.1.luk)
@@ -326,8 +319,8 @@ pchisq(2 * (logLik(egg.mmff) - logLik(regg.f)), df=1, lower.tail = F)
 options(contrasts= c("contr.sum","contr.poly"))
 
 repro$Random <- paste0(repro$Year, repro$Trial) # this is a little trick to specify a nested factor, 
-                                             # it will combine year and trial into one, then just
-                                             # use it as the random effect below (Random)
+# it will combine year and trial into one, then just
+# use it as the random effect below (Random)
 
 m <- lmer(egg.week ~ Treatment*Year*avg.inhab + (1|Random) + (1|Random:Treatment) +
             (1|Random:avg.inhab) + (1|Random:Treatment:avg.inhab), REML=F, repro)
@@ -392,7 +385,7 @@ p1<-ggplot(t1, aes(avg.inhab, egg.week, shape=treat.ordered, linetype=treat.orde
         axis.text.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))) +
   theme(legend.text=element_text(size=18)) +
   theme(legend.title =element_text(size=20))+
-#  scale_x_continuous(breaks=c(10,12,14,16,18,20)) + scale_y_continuous(limits = c(0,40000))+
+  #  scale_x_continuous(breaks=c(10,12,14,16,18,20)) + scale_y_continuous(limits = c(0,40000))+
   labs(color  = "Perceived Risk", linetype = "Perceived Risk", shape = "Perceived Risk")
 p1
 
@@ -590,7 +583,7 @@ anova(emodx)
 ## work correctly
 
 emodxi<-lmer(egg.week~Treatment*Year*avg.inhab+(Treatment|Year) + (Treatment|Year:Trial),
-           repro,REML=FALSE)
+             repro,REML=FALSE)
 summary(emodxi)
 anova(emodxi)
 Anova(emodxi)
@@ -652,14 +645,14 @@ anova(emodxii)
 #adding in the effect of avg.inhab, first with correlated, then with uncorrelated intercepts
 
 emodxiii<-lmer(egg.week~Treatment*Year*avg.inhab+(1|Trial:Treatment) + (avg.inhab|Trial:Treatment),
-                repro,REML=TRUE)
+               repro,REML=TRUE)
 summary(emodxiii)
 anova(emodxiii)
 
 #including avg.inhab with uncorrelated slopes and intercepts
 
 emodxiv<-lmer(egg.week~Treatment*Year*avg.inhab+(1|Trial:Treatment) + (avg.inhab||Trial:Treatment),
-               repro,REML=TRUE)
+              repro,REML=TRUE)
 summary(emodxiv)
 anova(emodxiv)
 
@@ -776,21 +769,21 @@ pchisq(2*(logLik(m) - logLik(m.1)), df = 1, lower.tail=F) # P = 1
 #comparing results with data for raw egg counts first, denDF shouldn't change based on transformed vs. raw data
 
 me<-lmer(egg.week ~ Treatment*Year.fact*avg.inhab + (1|Year.fact:Trial.fact) + (1|Treatment:Year.fact:Trial.fact) +
-                (1|avg.inhab:Year.fact:Trial.fact) + (1|Treatment:avg.inhab:Year.fact:Trial.fact), REML=F, repro)
+           (1|avg.inhab:Year.fact:Trial.fact) + (1|Treatment:avg.inhab:Year.fact:Trial.fact), REML=F, repro)
 summary(me)
 anova(me) #Okay, this seems to be estimating denDF for year, avg.inhab, and avg.inhab*year sort of correctly
 #but there are tons of error messages
 coef(me)
 
 me1.1<-lmer(egg.week ~ Treatment*Year*avg.inhab + (1|Trial) + (1|Treatment:Trial) +
-                  (avg.inhab||Trial) + (avg.inhab||Treatment:Trial), REML=TRUE, repro)
+              (avg.inhab||Trial) + (avg.inhab||Treatment:Trial), REML=TRUE, repro)
 summary(me1.1)
 anova(me1.1)
 coef(me1.1)
 
 #going to try some other notation
 me1<-lmer(egg.week ~ Treatment*Year*avg.inhab + (1|Random) + (0+Treatment|Random) +
-           (1|avg.inhab:Random) + (0+Treatment|avg.inhab:Random), REML=F, repro)
+            (1|avg.inhab:Random) + (0+Treatment|avg.inhab:Random), REML=F, repro)
 summary(me1)
 anova(me1)
 
@@ -1127,7 +1120,7 @@ anova(newmod)
 ## that have avg.inhab included in them do not have lower dendf
 
 newmod1<-lme(egg.week~Treatment*Year.fact*avg.inhab, 
-            random=list(Trial.fact=~1,trial_treatment=~1,trial_inhab_factor=~1,trial_inhab_factor_treatment=~1),data=repro, method="ML")
+             random=list(Trial.fact=~1,trial_treatment=~1,trial_inhab_factor=~1,trial_inhab_factor_treatment=~1),data=repro, method="ML")
 summary(newmod1)
 anova(newmod1)
 
