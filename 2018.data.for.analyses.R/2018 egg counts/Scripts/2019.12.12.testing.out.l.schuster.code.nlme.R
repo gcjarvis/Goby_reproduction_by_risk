@@ -860,8 +860,7 @@ summary(parsedFormula)
 
 devianceFunction <- do.call(mkLmerDevfun, parsedFormula)
 
-
-
+# reanalyzing data with log-likelihood estimates and chi-square tests####
 #found out that I have to include Year as "Year.fact", in order to make sure that model is scaled correctly
 
 #model structure 1: all slopes are the same (effcets are the same among trials), but intercepts are random (magnitude differs)
@@ -869,6 +868,19 @@ devianceFunction <- do.call(mkLmerDevfun, parsedFormula)
 
 me<-lmer(egg.week ~ Treatment*Year.fact*avg.inhab + (1|Trial.fact) + (1|Treatment:Trial.fact) +
            (1|Trial.fact:avg.inhab)+(1|avg.inhab:Treatment:Trial.fact), REML=F, repro)
+hist(resid(me))
+qqnorm(resid(me))
+qqline(resid(me))
+plot(me)
+
+#trying out performance package for data visualization
+library(performance)
+png("Output/2020.4.8.model.testing.png", width = 9.5, height = 5.5, units = 'in', res = 300)
+check_model(me)
+dev.off()
+
+#eh...not so great...
+
 summary(me)
 anova(me) #Okay, this seems to be estimating denDF for year, avg.inhab, and avg.inhab*year sort of correctly
 #but there are tons of error messages
@@ -929,19 +941,157 @@ anova(me5,me6)# P = 0.779
 
 me7<-update(me6, .~. -(Treatment:avg.inhab))
 summary(me7) # trial variance is still 6% of residual variance for random effects
+#NOTE: this summary shows me the estimate for the effect of avg inhab (741.827),
+## indicating that for every goby added, there's an increase of about 740 eggs on average
+
+#the trouble that I'm anticipating is that there might be a case where one of the years or the interactions
+## is significant, not just the term itself (e.g. avg.inhab)
+
+# you'll see that Treatment1 and Treatment2 are in the model, so I guess I can show what treatment si driving the
+## trend? We'll cross that bridge when we come to it (likely behavior analyses)
+
 anova(me7)
 
 anova(me6,me7)# P = 0.7064
 
-#can go with the results from the anova(me7) table. These are the results that I will report in the paper for the fully-reduced model
+#dropping the fixed effects that I have reduced the model to do the log-likelihood estimates
+#NOTE: m7 is the fully-reduced model, so just have to jeep iterating that model +/- individual fixed factors
 
-#that's it, no difference in models, but just to make sure we're doing this correctly, let's remove avg.inhab and see what happens
+# - avg.inhab, but keeping in other fixed factors
+
 ## should see a sig. log-likelihood result
 me8<-update(me7, .~. -(avg.inhab))
 summary(me8) # residual variance for random effects just shot up a ton (soaked up all variance from avg.inhab)
 anova(me8)
 
-anova(me7,me8)# P = 7e-10 ***, super significant, so don't want to remove that term
+anova(me7,me8)#chisq = 38.021      df = 1      p = 7e-10, super significant, so don't want to remove that term
+
+# - Treatment*Year.fact
+
+me9<-update(me7, .~. -(Treatment:Year.fact))
+summary(me9)
+anova(me9)
+
+anova(me7,me9) #chisq = 0.5296     df= 2     p = 0.7674
+
+# - Treatment
+
+me10<-update(me7,.~. -(Treatment))
+summary(me10)
+anova(me10)
+
+anova(me7,me10) #chisq = 0     df = 0         p = 1 #this is acceptable, amanda has this in her paper for a factor
+
+#same analysis with log-likelihood estimates, but with sqrt.eggs as response####
+## all I have to do is change the orignial model
+
+me<-lmer(sqrt(egg.week) ~ Treatment*Year.fact*avg.inhab + (1|Trial.fact) + (1|Treatment:Trial.fact) +
+           (1|Trial.fact:avg.inhab)+(1|avg.inhab:Treatment:Trial.fact), REML=F, repro)
+hist(resid(me)) #I honestly think that 
+qqnorm(resid(me))
+qqline(resid(me))
+plot(me)
+
+summary(me)
+anova(me) #Okay, this seems to be estimating denDF for year, avg.inhab, and avg.inhab*year sort of correctly
+#but there are tons of error messages
+coef(me)
+
+me2<-update(me, .~. -(1|avg.inhab:Treatment:Trial.fact))
+summary(me2)
+anova(me2) #Okay, this seems to be estimating denDF for year, avg.inhab, and avg.inhab*year sort of correctly
+#but there are tons of error messages
+coef(me2)
+
+anova(me,me2) #no difference in models when three-waty interaction with random intercept is removed
+
+#next logical removal is the 1|treatment:trial term
+
+me3<-update(me2, .~. -(1|Treatment:Trial.fact))
+summary(me3)
+anova(me3)
+
+anova(me2,me3) #no difference
+
+#next logical removal is the 1|Trial:avg.inhab term, but I'm skeptical to take that out b/c it accounts for 12% of the
+## residual variance in random effects (in fact, there's more variance attributed to this term than trial alone)
+## fortunately, can test whwether it makes sense to remove that term with log-likelihood test comapring m3 with m4
+
+#the key question will be whether to evaluate the effect of avg.inhab with random slope (different effect of covariate among trials),
+## and random intercept (same effect of covariate, but different magnitude among trials)
+
+#should compare model with avg.inhab|Trial.fact vs. 1|Trial:avg.inhab and see what log-likelihood shows
+
+me4<-update(me3, .~. -(1|Trial:avg.inhab)) #all interactions with covariate that were N.S. were removed, including random effects
+## in fact, it may put more variance in the overall model, including variance for fixed effects
+summary(me4) # trial accounts for 6% of the residual variance
+anova(me4)
+
+anova(me3,me4) # P = 0.3939, doesn't suggest any differnce due to the dropping of the random effect of Trial:avg.inhab
+
+#so, decided to leave the random factor of 1|Trial in the model, after removing all other nonsignificant randm effects at P>0.25
+## as tested for with log-likelihood tests
+#NOTE: this model structure assumes all random effects had random intercepts (1|Random...), but not random slopes among trials
+
+#okay, now doing the same thing with fixed factors, going to start with highest-order interactions with the covariate
+
+me5<-update(me4, .~. -(Treatment:Year.fact:avg.inhab))
+summary(me5) # trial accounts for 6% of the residual variance
+anova(me5)
+
+anova(me4,me5)# P = 0.5013
+
+#now removing Year.fact:avg.inhab (the order of removal seems arbitrary, but that's the next one)
+me6<-update(me5, .~. -(Year.fact:avg.inhab))
+summary(me6) # trial variance is still 6% of residual variance for random effects
+anova(me6)
+
+anova(me5,me6)# P = 0.779
+
+#now want to take out Treatment:avg.inhab
+
+me7<-update(me6, .~. -(Treatment:avg.inhab))
+summary(me7) # trial variance is still 6% of residual variance for random effects
+#NOTE: this summary shows me the estimate for the effect of avg inhab (741.827),
+## indicating that for every goby added, there's an increase of about 740 eggs on average
+
+#the trouble that I'm anticipating is that there might be a case where one of the years or the interactions
+## is significant, not just the term itself (e.g. avg.inhab)
+
+# you'll see that Treatment1 and Treatment2 are in the model, so I guess I can show what treatment si driving the
+## trend? We'll cross that bridge when we come to it (likely behavior analyses)
+
+anova(me7)
+
+anova(me6,me7)# P = 0.7064
+
+#dropping the fixed effects that I have reduced the model to do the log-likelihood estimates
+#NOTE: m7 is the fully-reduced model, so just have to jeep iterating that model +/- individual fixed factors
+
+# - avg.inhab, but keeping in other fixed factors
+
+## should see a sig. log-likelihood result
+me8<-update(me7, .~. -(avg.inhab))
+summary(me8) # residual variance for random effects just shot up a ton (soaked up all variance from avg.inhab)
+anova(me8)
+
+anova(me7,me8)#chisq = 38.021      df = 1      p = 7e-10, super significant, so don't want to remove that term
+
+# - Treatment*Year.fact
+
+me9<-update(me7, .~. -(Treatment:Year.fact))
+summary(me9)
+anova(me9)
+
+anova(me7,me9) #chisq = 0.5296     df= 2     p = 0.7674
+
+# - Treatment
+
+me10<-update(me7,.~. -(Treatment))
+summary(me10)
+anova(me10)
+
+anova(me7,me10)
 
 #not done yet...
 
@@ -951,6 +1101,7 @@ anova(me7,me8)# P = 7e-10 ***, super significant, so don't want to remove that t
 
 # it seems to me that it is redundant, and that I might want to include avg.inhab|Trial in addition to 1|avg.inhab:Trial
 
+#stock code to be applied to my data
 lme(y ~ time * tx, 
     random = list(therapist = ~time * tx, 
                   subjects = ~time),
@@ -995,3 +1146,10 @@ anova(me) #Okay, this seems to be estimating denDF for year, avg.inhab, and avg.
 #coef(me)
 
 #SUMMARY: not entirely the same, although it does have a closer df 
+
+boxplot(repro$egg.week~repro$Treatment)
+
+n<-1883/(sqrt(379033+135203+3245737))
+n
+
+View(repro)
