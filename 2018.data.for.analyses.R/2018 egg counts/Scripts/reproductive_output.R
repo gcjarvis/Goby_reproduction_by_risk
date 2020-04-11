@@ -6,12 +6,10 @@
 
 rm(list=ls())
 
-library(nlme)
 library(lme4)
 library(lmerTest)
 library(dplyr)
 library(ggplot2)
-library(visreg) #visualizing linear models
 library(emmeans) #for generating least-squares adjusted means from models (will likely help when I have to
 ## back-transform means if data transformation is needed)
 
@@ -348,14 +346,30 @@ emmeans(mes14, pairwise~T6.comparison)
 boxplot(sqrt.egg.week~T6.comparison,data=repro.t6)# variances don't look too bad
 
 #plotting ANCOVA figure for RAW data; this is what I present in the manuscript####
-#setting up df
+
+#Order the treatments: Low --> Med --> High
 repro$Treatment.ord<-ordered(repro$Treatment,levels=c("Low","Medium","High"))
-egg.plot<-with(repro, aggregate((egg.week), list(Treatment.ord=Treatment.ord), mean))
-egg.plot$se<-with(repro, aggregate((egg.week), list(Treatment.ord=Treatment.ord), 
-                                  function(x) sd(x)/sqrt(length(x))))[,2]
 
-#need to go through scripts for plots and figure out which is the one to use, b/c there are so many
-# make sure you're actually plotting eggs reef-1 week-1 (that's what should be in 
-## the parentehesis in the y-axis label too)
+#png("Output/2020.4.11.gobies.per.reef.9.5x5.5.300dpi.png", width = 9.5, height = 5.7, units = 'in', res = 300)
 
+anc1<-ggplot(repro, aes(avg.inhab, egg.week, shape=Treatment.ord, linetype=Treatment.ord, col=Treatment.ord)) +
+  geom_smooth(method="lm", se=FALSE, show.legend = TRUE)  +
+  geom_point(size=3)+
+  theme_classic()+
+  labs(x=(bquote('Gobies '~Reef^ -1*'')),y=(bquote('Reproducton '~Reef^ -1~ Week^-1*'')))+
+  expand_limits(y=0)+
+  scale_color_manual(values=c("black", "#666666", "grey"))+
+  scale_linetype_manual(values=c("solid", "dashed", "twodash"))+
+  theme(axis.text.x=element_text(size=20, colour="black"),
+        axis.text.y=element_text(size=20, colour="black"), 
+        axis.title=element_text(size=20))+
+  theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0)), 
+        axis.title.x = element_text(margin = margin(t = 12, r = 0, b = 0, l = 0)), 
+        axis.text.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))) +
+  theme(legend.text=element_text(size=16)) +
+  theme(legend.title =element_text(size=17))+
+  scale_x_continuous(breaks=c(10,12,14,16,18,20)) + scale_y_continuous(limits = c(0,12000))+
+  labs(color  = "Perceived Risk", linetype = "Perceived Risk", shape = "Perceived Risk")
+anc1
 
+#dev.off()
