@@ -224,8 +224,11 @@ anova(dm7,dm8)
 #me8 is the final model that I will likely end up with (those are all of the fixed and random factors that I'm interested in)
 hist(resid(dm8))#not bad
 #LS-adjusted means from model
-emmeans(dm8, pairwise~Treatment) #warning message re: interactions, but I think it's okay
+emmeans(dm8, pairwise~Year) #warning message re: interactions, but I think it's okay
 boxplot(total.dist.moved~Treatment,data=behave)# variances don't look too bad, and medians look pretty good to me (i.e. match up with LS-means for the most part)
+library(visreg)
+visreg(dm8)
+visreg(dm8, "Treatment",by="Year")
 
 #dropping the fixed effects that I have reduced the model to do the log-likelihood estimates
 #NOTE: m8 is the fully-reduced model, so just have to jeep iterating that model +/- individual fixed factors of interest
@@ -233,11 +236,19 @@ boxplot(total.dist.moved~Treatment,data=behave)# variances don't look too bad, a
 # - avg.inhab, but keeping in other fixed factors
 
 dm9<-update(dm8, .~. -(avg.inhab))
-summary(dm9) anova(dm9)
+summary(dm9) 
+anova(dm9)
 
 anova(dm8,dm9)
 
 # - Treatment*Year.fact
+
+#making a new factor of Treatment:Year
+#behave$lukiss<-paste0(behave$Treatment, behave$Year)
+
+#dm11.1<-update(dm10, .~. +(lukiss))
+#summary(dm11.1)
+#View(lukiss)
 
 dm10<-update(dm8, .~. -(Treatment:Year))
 summary(dm10)
@@ -279,3 +290,73 @@ anova(dm8,dm13) #well, this stinks. I can't have it both ways
 ## good evidence to keep it in the model and analyze with chi-square tests, but there is 
 ## also a significant effect of treatment when the full model (including trt*year) is analyzed
 ## as an ANOVA
+
+#going to see if I can figure out which treatments are where in the summary output #####
+#ordering treatments
+
+behave$Treatment.test<-behave$Treatment
+## you can get the treatments listed in the summary output
+
+dm8test<-lmer(total.dist.moved~Treatment.o*Year + avg.inhab+ (0+avg.inhab|Trial),REML=F, behave)
+summary(dm8test)
+View(behave)
+
+
+
+#reduced model for comparison with dm8
+
+emmeans(dm8, pairwise~Treatment)
+#LS-adjusted means
+lsmeans(dm8,
+        pairwise~Treatment,
+        adjust="tukey")
+
+fixef(dm8)
+ranef(dm8)
+
+levels(behave$Treatment)
+levels(behave$Year)
+levels(behave$Treatment.o)
+
+coef(dm8)
+coef(dm8test)
+
+# I think it might have something to do with the fact that R is taking the covariate into account
+## which would change the intercept, regardless of what the raw data show
+
+#reordering treatment levels to see if I get the same reuslts in the summary statistics
+behave$fac2 <- relevel(behave$Treatment.test, ref = "High")
+levels(behave$fac2)
+
+dm8test1<-lmer(total.dist.moved~fac2*Year + avg.inhab+ (1|Trial),REML=F, behave)
+summary(dm8test1)
+#View(behave)
+
+emmeans(dm8test1, pairwise~fac2)
+#LS-adjusted means
+lsmeans(dm8,
+        pairwise~Treatment,
+        adjust="tukey")
+
+
+#want to see how avg.inhab may have differed among treatments
+
+anc1<-ggplot(behave, aes(avg.inhab, total.dist.moved, shape=Treatment.o, linetype=Treatment.o, col=Treatment.o)) +
+  geom_smooth(method="lm", se=FALSE, show.legend = TRUE)  +
+  geom_point(size=2)+
+  theme_classic()+
+  labs(x=(bquote('Gobies '~Reef^ -1*'')),y=(bquote('Total dist. moved '~Reef^ -1~ Week^-1*'')))+
+  expand_limits(y=0)+
+  scale_color_manual(values=c("black", "#666666", "grey"))+
+  scale_linetype_manual(values=c("solid", "dashed", "twodash"))+
+  theme(axis.text.x=element_text(size=20, colour="black"),
+        axis.text.y=element_text(size=20, colour="black"), 
+        axis.title=element_text(size=20))+
+  theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0)), 
+        axis.title.x = element_text(margin = margin(t = 12, r = 0, b = 0, l = 0)), 
+        axis.text.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))) +
+  theme(legend.text=element_text(size=16)) +
+  theme(legend.title =element_text(size=17))+
+  scale_x_continuous(breaks=c(10,12,14,16,18,20)) + scale_y_continuous(limits = c(0,500))+
+  labs(color  = "Perceived Risk", linetype = "Perceived Risk", shape = "Perceived Risk")
+anc1
