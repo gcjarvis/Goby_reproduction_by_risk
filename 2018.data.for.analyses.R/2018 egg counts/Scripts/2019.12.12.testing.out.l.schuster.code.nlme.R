@@ -1061,6 +1061,18 @@ anova(me7)
 
 anova(me6,me7)# P = 0.7064
 
+#can I make better sense of the summary output if I rename the levels of Treatment?
+library(plyr)
+library(dplyr)
+revalue(x, c("beta"="two", "gamma"="three"))
+#> [1] alpha two   three alpha two  
+#> Levels: alpha two three
+
+repro$reordered<-revalue(repro$Treatment,c("Low"="1","Medium"="2","High"="3"))
+#basic linear model to try and understand summary output
+M2<-lmer(egg.week~reordered*Year.fact+avg.inhab+(1|Trial),REML=F, repro)
+summary(M2)
+
 #dropping the fixed effects that I have reduced the model to do the log-likelihood estimates
 #NOTE: m7 is the fully-reduced model, so just have to jeep iterating that model +/- individual fixed factors
 
@@ -1164,7 +1176,19 @@ visreg(model, "Treatment")
 ## It might have something to do with the structure of the model?
 ## It's only noticeable in the plot for 2017, which shows negative values
 
-or (if no interaction):
-  visreg(model, ‘Treatment’)
+#or (if no interaction):
+#  visreg(model, ‘Treatment’)
 
+# trying out Zurr data to see if I can figure out how the summary output is working###
 
+zurr<-repro<-read.table("Data/mixed.model.practice.zurr.et.al/Loyn.txt", header = TRUE, dec = ".")
+zurr$fGRAZE <-factor(zurr$GRAZE)
+
+zurr$L.AREA <-log10(zurr$AREA)
+zurr$L.DIST <-log10(zurr$DIST)
+zurr$L.LDIST <-log10(zurr$LDIST)
+
+levels(zurr$fGRAZE)
+M1 <-lm(ABUND ~ L.AREA + L.DIST +L.LDIST+ YR.ISOL + ALT + fGRAZE, data = zurr)
+anova(M1)
+summary(M1)
