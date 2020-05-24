@@ -23,7 +23,7 @@ behave$Year <- ifelse(behave$Trial <=3, 2017, 2018)
 #making Year and Trial factors
 behave$Year<- as.factor(behave$Year)
 behave$Trial<- as.factor(behave$Trial)
-View(behave)
+#View(behave)
 
 #making the variable "avg.inhab" ((20+reco)/2), rounded to the nearest whole fish
 #using the average number of inhabitants per reef as the covariate in mixed models

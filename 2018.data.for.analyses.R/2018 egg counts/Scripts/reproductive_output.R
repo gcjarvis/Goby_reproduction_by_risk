@@ -19,7 +19,6 @@ repro<-read.csv("Data/goby_reproduction.2020.4.9.csv")
 #intial data viz
 pairs(repro)
 
-
 #data manipulation####
 
 #adding column for average number of inhabitants throughout the trial, rounded to nearest whole number of fish
@@ -75,6 +74,20 @@ qqline(resid(me))
 plot(me)
 summary(me)
 anova(me)
+
+#same model, but with separate slopes for each trial ((avg.inhab|Treatment:Trial))
+#doesn't appear to make much of a difference, and the two models are not 
+#mer<-lmer(egg.week ~ Treatment*Year*avg.inhab + (1|Trial) + (1|Treatment:Trial) +
+#           (1|Trial:avg.inhab)+(avg.inhab|Treatment:Trial), REML=F, repro)
+#hist(resid(mer))
+#qqnorm(resid(mer))
+#qqline(resid(mer))
+#plot(mer)
+#summary(mer)
+#anova(mer)
+
+#anova(me,mer) #not going to use this model in any of the the further analyses
+
 
 #removing three-way interaction of random effect
 me2<-update(me, .~. -(1|avg.inhab:Treatment:Trial))
