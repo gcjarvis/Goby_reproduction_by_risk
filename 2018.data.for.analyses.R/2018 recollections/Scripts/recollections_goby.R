@@ -90,6 +90,13 @@ anova(re2)
 anova(re,re2) #no difference in models when two-way interaction with random intercept is removed, taking it out
 
 #final model is re2 (Survivorship ~ Treatment*Year + (1|Trial))
+# means for survival from final model
+#me8 is the final model that I will likely end up with (those are all of the fixed and random factors that I'm interested in)
+hist(resid(re2))#not bad, slightly right-skewed
+#LS-adjusted means from model
+emmeans(re2, pairwise~Treatment) #warning message re: interactions, but I think it's okay
+boxplot(Survivorship~Treatment,data=reco)# variances don't look too bad, and medians look pretty good to me (i.e. match up with LS-means for the most part)
+
 # now can test for effects individually
 
 # - trial
@@ -121,10 +128,12 @@ anova(re6)
 
 anova(re6, re4)
 
-# 1b. T-test for trial 6 (survival for high-risk caged vs. uncaged)
+# 1b. T-test for trial 6 (survival for high-risk caged vs. uncaged) ####
 
 t.test(t6.comp.wrangled$Control,t6.comp.wrangled$High)
-#no diff survival based on caging 
+# no sig. difference in survival based on caging 
+# proportion surviving: high-risk caged = 0.19; high-risk uncaged = 0.14)
+# reported these means for caging effects in the paper
 
 # plotting (all trials, but not caging effects in trial 6) ####
 
