@@ -176,7 +176,7 @@ Summarize(Present~T6.comparison,
 # High-risk caged: n = 4; mean = 0.433 
 # High-risk uncaged: n = 4; mean = 0.683
 
-# 1. analyses ####
+# analyses ####
 #NOTE:
 # analyzing mixed models with log-likelihood estimates and chi-square tests.
 # start with full model, then reduce model first by non-significant random effects, then by NS. fixed effects
@@ -188,9 +188,9 @@ options(contrasts = c("contr.sum","contr.poly")) #this is important, run before 
 #model structure for random effects: all slopes are the same (effects are the same among trials), but intercepts are random (magnitude differs)
 ## Note: use "REML=F" (maximum likelihood estimates) to compare models with log-likelihood estimates (Pinheiro & Bates, 2000; Bolker et al., 2009)
 
-# 1a. Trials 1-5, comparing predator presence and sublethal threat among Low-, Medium-, and High-risk caged treatments ####
+# 1 Trials 1-5, comparing predator presence and sublethal threat among Low-, Medium-, and High-risk caged treatments ####
 
-# 1ai. predator presence ####
+# 1a. predator presence ####
 glimpse(t1.5.w)
 
 # full model
@@ -272,7 +272,7 @@ anova(pre7,pre8)
 emmeans(pre8, pairwise~Treatment) #warning message re: interactions, but I think it's okay
 boxplot(Present~Treatment,data=t1.5.w)# variances don't look too bad, and medians look pretty good to me (i.e. match up with LS-means for the most part)
 
-# 1aii. sublethal threat (compared among medium- and high-risk caged treatments) ####
+# 1b. sublethal threat (compared among medium- and high-risk caged treatments) ####
 
 # NOTE: only medium- and high-risk caged reefs in Trials 1-5 had predators that could have been perceived 
 # as a sublethal threat, so I'm using the "ptl.sub" df
@@ -359,7 +359,7 @@ anova(st7,st8)
 emmeans(st8, pairwise~Treatment) #warning message re: interactions, but I think it's okay
 boxplot(Sublethal.Threat~Treatment,data=ptl.sub)# variances don't look too bad, and medians look pretty good to me (i.e. match up with LS-means for the most part)
 
-# 1b. Trial 6, comparing HR caged and uncaged plots with a t-test for each distinction ####
+# 2. comparing HR caged and uncaged plots with a t-test for each distinction ####
 # Rationale: Not indcluding average inhabitants because Trial 6 wsa a relatively short trial, and 
 # preliminary analyses showed that the number of inhabitants did not differ than much between treatments
 # (~3 gobies on average)
@@ -374,24 +374,70 @@ hr.t.test <- hr.t.test %>%
   rename(caged_present = 1, uncaged_present = 2, caged_sublethal = 3, 
          uncaged_sublethal = 4, caged_lethal = 5, uncaged_lethal = 6)
 
-# 1bi. present ####
+# 2a. present
 t.test(hr.t.test$caged_present,hr.t.test$uncaged_present)
 # no difference in the proportion of photos with predators present between high-risk caged vs. uncaged 
 # treatments
 
-# 1bii. sublethal threat ####
+# 2b. sublethal threat
 t.test(hr.t.test$caged_sublethal,hr.t.test$uncaged_sublethal)
 # no diff in propotion of photos with sublethal predators
 
-# 1biii. lethal threat ####
+# 2c. lethal threat
 t.test(hr.t.test$caged_lethal,hr.t.test$uncaged_lethal)
 # no diff in lethal, in fact, equal means for each treatment
 
-# 2. plotting, using data in long format (trials 1-5: trial.1.5.long, trial6 6: HR.comp) ####
+#plotting, using data in long format (trials 1-5: pl, trial6 6: HR.comp)####
 
-# 2a. Trials 1-5, including data for all treatments and predator categories ####
 
-#ordering treatments
+
+
+bargraph.CI(x.factor = Treatment.combo, response = Score, group = Predator.class, legend=TRUE, main="predator presence, prelim",x.leg = 10, data = pl)
+
+#2) sublethal threat
+#not really needed, no differences statistically, but going to combine lethal and sublethal
+#into one frame
+
+#first, subset df to only include lethal and sublethal from HR.long
+HR.long.sub<-subset(HR.long,Predator.class!="Present")
+HR.long.sub<-subset(HR.long.sub,T6.comparison!=c("Low","Medium"))
+View(HR.long.sub)
+
+
+#plotting
+bargraph.CI(x.factor = T6.comparison, response = Score, group = Predator.class,
+            legend=TRUE, main="predator lethal + sublethal, t6 comp", data = HR.long.sub)
+
+
+#3) lethal threat
+#no differences, but want to see what's going on with weird F-value
+
+bargraph.CI(x.factor = T6.comparison, response = Lethal.Threat,
+            legend=TRUE, main="predator lethal, t6 comp", data = HR.comp)
+
+
+#B) diagnostic plots for trials 1-5 (all treatments)
+#will have to subset data to make comparisons
+# just do boxplots to visualize? Can't do a formal comparison for lethal threat
+# - because it was only possible in HR-caged
+pl$Treatment.combo<-ordered(pl$Treatment.combo, c("Low, Medium, High"))
+
+#looks similar to when I did it before
+
+#will analyze with df in wide format (p), comaparing treatments with the same 
+# achievable scores (i.e. 0-3 for all, 4 for MR and HR)
+
+#plotting figures, will likely be my final plots in ggplot
+#doing with barplot now
+
+#trials 1-5, df = "trial.1.5.long"
+trial.1.5.long$Treatment.ordered<-ordered(trial.1.5.long$Treatment,c("Low","Medium","High"))
+trial.1.5.long$Predator.class.ordered<-ordered(trial.1.5.long$Predator.class,c("Present","Sublethal.Threat","Lethal.Threat"))
+bargraph.CI(x.factor = Treatment.ordered, response = Score, group = Predator.class.ordered,
+            legend=TRUE, xlab="Treatment", ylab= "proportion of photos", main="predator activity, trials 1-5", data = trial.1.5.long)
+
+# plotting ####
+
 trial.1.5.long$Treatment<-ordered(trial.1.5.long$Treatment,c("Low","Medium","High"))
 
 pred1.5<-with(trial.1.5.long, aggregate((Score),list(Treatment=Treatment,Predator.class=Predator.class),mean))
@@ -403,7 +449,7 @@ pred1.5
 
 #this is the plot that I used to make the black and grayscale figure, with no figure legend, for the MS
 
-#png("Output/2019.2.6.9.5x5.5.300dpi.png", width = 9.5, height = 5.5, units = 'in', res = 300)
+png("Output/2019.2.6.9.5x5.5.300dpi.png", width = 9.5, height = 5.5, units = 'in', res = 300)
 
 t1.5.plot<- ggplot(pred1.5, aes(x=Treatment, y=x, fill=Predator.class)) +
   geom_bar(stat="identity", colour= "black", width = 0.9, position="dodge", show.legend = FALSE)+ 
@@ -422,10 +468,17 @@ t1.5.plot<- ggplot(pred1.5, aes(x=Treatment, y=x, fill=Predator.class)) +
   theme(axis.ticks.x = element_blank()) + scale_y_continuous(expand = c(0,0),limits = c(0,0.605))
 t1.5.plot + geom_linerange(aes(ymin=x-se, ymax=x+se), size=0.5,   
                            position=position_dodge(.90)) + theme(text = element_text(family="Arial"))
-#dev.off()
+dev.off()
 
-#this is the plot that I used to make a color figure, with a figure legend ("see scale fill discrete..."), for the MS
-#png("Output/2019.2.6.9.5x5.5.color.300dpi.png", width = 9.5, height = 5.5, units = 'in', res = 300)
+scale_fill_discrete(name="Predator Classification", labels=c("Present, low threat", "High perceived, no actual threat", 
+                                                             "High perceived and actual threat"), values=c("black", "#666666", "grey"))
+#messing around with order of fill, have to do this in two steps, first make black and white with no legend, then color (fill discrete)
+# - with labels that are correct
+# Then have to bring into PPT and change the color of the boxes in the legend to match the colors in the B&W figure
+
+
+#this is the plot that I used to make a color figure, with a figure legend (see scale fill discrete), for the MS
+png("Output/2019.2.6.9.5x5.5.color.300dpi.png", width = 9.5, height = 5.5, units = 'in', res = 300)
 
 t1.5.plot<- ggplot(pred1.5, aes(x=Treatment, y=x, fill=Predator.class)) +
   geom_bar(stat="identity", colour= "black", width = 0.9, position="dodge")+ 
@@ -447,26 +500,19 @@ t1.5.plot<- ggplot(pred1.5, aes(x=Treatment, y=x, fill=Predator.class)) +
 t1.5.plot + geom_linerange(aes(ymin=x-se, ymax=x+se), size=0.5,   
                            position=position_dodge(.90)) + theme(text = element_text(family="Arial"))
 
-#dev.off()
+dev.off()
 
-# 2b. Trial 6 plots comparing high-risk caged and uncaged treatments (HR.long df) ####
-# NOTE: Using "T6.comparison" for treatment factor this time
+#now have to do the same thing, but with Trial 6 data only (HR.long df)
+#using "T6.comparison" for treatment factor this time
 
 #View(HR.long)
 
-HR.long$T6.comparison<-as.factor(HR.long$T6.comparison)
-
 pred.6<-with(HR.long, aggregate((Score),list(T6.comparison=T6.comparison,Predator.class=Predator.class),mean))
+#View(pred.6)
 pred.6$se<-with(HR.long, aggregate((Score),list(T6.comparison=T6.comparison,Predator.class=Predator.class), 
                                    function(x) sd(x)/sqrt(length(x))))[,3]
-pred.6
-
-pred.6$Predator.class<-as.factor(pred.6$Predator.class)
 #ordering Predator.class values
 pred.6$Predator.class<-ordered(pred.6$Predator.class, c("Present","Sublethal.Threat","Lethal.Threat"))
-
-pred.6<- fct_relevel(pred.6$Predator.class,"Present","Sublethal.Threat","Lethal.Threat")
-pred.6
 
 #renaming the labels for high-risk treatment t6.comparison with base R from High to "High - Caged" and "Uncaged" to "High - Uncaged" 
 #will eventually have a second figure that has "Risk Treatment" as the x axis, and can just compare caging effects, that will be more clear anyway
@@ -476,9 +522,11 @@ pred.6
 levels(pred.6$T6.comparison)[levels(pred.6$T6.comparison)=="High"] <- "High - Caged"
 levels(pred.6$T6.comparison)[levels(pred.6$T6.comparison)=="Uncaged"] <- "High - Uncaged"
 
-#png("Output/2019.2.6.9.5x5.5.trial6.300dpi.png", width = 9.5, height = 5.5, units = 'in', res = 300)
+#note: this is the code that I used to make the figure for the MS (see PPT for figure manipulations)
 
-t6.plot<- ggplot(pred.6, aes(x=T6.comparison, y=x, fill=Predator.class)) +
+png("Output/2019.2.6.9.5x5.5.trial6.300dpi.png", width = 9.5, height = 5.5, units = 'in', res = 300)
+
+t1.5.plot<- ggplot(pred.6, aes(x=T6.comparison, y=x, fill=Predator.class)) +
   geom_bar(stat="identity", colour= "black", width = 0.60, position="dodge", show.legend = FALSE)+ 
   scale_x_discrete(limits=c("High - Caged", "High - Uncaged"))+
   theme_classic() + 
@@ -492,7 +540,7 @@ t6.plot<- ggplot(pred.6, aes(x=T6.comparison, y=x, fill=Predator.class)) +
         axis.text.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))) +
   theme(legend.text=element_text(size=18)) +
   theme(legend.title =element_text(size=20))+
-  theme(axis.ticks.x = element_blank()) + scale_y_continuous(expand = c(0,0),limits = c(0,0.85))
-t6.plot + geom_linerange(aes(ymin=x-se, ymax=x+se), size=0.5,   
+  theme(axis.ticks.x = element_blank()) + scale_y_continuous(expand = c(0,0),limits = c(0,0.82))
+t1.5.plot + geom_linerange(aes(ymin=x-se, ymax=x+se), size=0.5,   
                            position=position_dodge(.60)) + theme(text = element_text(family="Arial"))
-#dev.off()
+dev.off()
