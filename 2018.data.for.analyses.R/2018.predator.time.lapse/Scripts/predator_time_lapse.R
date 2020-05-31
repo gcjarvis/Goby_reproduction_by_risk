@@ -22,16 +22,15 @@ library(lme4)
 library(lmerTest)
 library(ggplot2)
 library(tidyverse)
-
-#type III ANOVA
-options(contrasts = c("contr.sum","contr.poly")) #this is important, run before ANOVA, will set SS to type III
+library(FSA) #summarizing samples and means (equivalent of "emmeans" package in other scripts)
 
 #importing data####
 pred<-read.csv(file = "Data/2020_5_31_predator_raw_data.csv")
-View(pred)
+#View(pred)
 #removing NA's
 pred.rm.na<-na.omit(pred)
 head(pred.rm.na)
+View(pred.rm.na)
 
 #rename "Treatment.combo" to "Treatment"
 pred.rm.na<-rename(pred.rm.na, Treatment = Treatment.combo)
@@ -44,6 +43,7 @@ pred.rm.na$Year <- ifelse(pred.rm.na$Trial <=3, 2017, 2018)
 #making year and trial factors for analysis
 pred.rm.na$Year<- as.factor(pred.rm.na$Year)
 pred.rm.na$Trial<-as.factor(pred.rm.na$Trial)
+pred.rm.na$Treatment<-as.factor(pred.rm.na$Treatment)
 
 # exporting data in wide format
 # write.csv(pred.rm.na,"Data\\2019.1.2.predator.raw.data.csv", row.names = FALSE)
@@ -55,10 +55,9 @@ repro<-read.csv(file= "Data/egg.counts.2019.12.23.csv")
 repro$Year<-as.factor(repro$Year)
 repro$Trial<-as.factor(repro$Trial)
 
-
 #data wrangling####
 
-#wide format (for analyses)####
+# wide format for analyses ####
 
 # want the proportion of photos per reef +/- predators, 
 # - predators close enough to be a sublethal threat, 
@@ -83,14 +82,14 @@ p <- p %>%
 # Bringing in avg. numer of gobies inhabiting each reef as well, adding it to "p" df
 
 pr<-left_join(p,repro,by=c("Trial","Reef","Treatment","T6.comparison","Year"))
-View(pr)
+#View(pr)
+#head(pr)
 
 #want to drop unnecessary columns from repro df, i.e. everything but avg.inhab
-# they are columns 8:12 and 14:16
-pr1<-pr[-c(10:14,16)]
-View(pr1)
+pr1<-pr %>% select(Trial:Lethal.Threat,avg.inhab)
+#View(pr1)
 
-#long format for plotting#### 
+# long format for plotting #### 
 # p-long = "pl"
 
 #for all trials
@@ -98,43 +97,36 @@ pr1<-as_tibble(pr1)
 pr1
 
 pl<-pr1 %>% gather(Predator.class, Score, Present:Lethal.Threat)
-View(pl)
+#View(pl)
 
 # Creating separate df named "HR.comp" to compare responses between HR-caged and -uncaged treatments in Trial 6
-# Will not include year or trial in the model for analyses
-# I only did time lapses on high-risk caged and uncaged treatments for T6
+# Filtering by Trial 6 only, and removing columns for Trial and Year
 
-HR.comp<-p[p$Trial==6,]
-View(HR.comp)
-
-#removing Trial and Year columns
-
-HR.comp<-HR.comp %>% select (-c(Trial,Year))
+HR.comp<-p %>% filter(Trial==6) %>% 
+  select (-c(Trial,Year))
+#View(HR.comp)
 
 #exporting data
-write.csv(HR.comp,"Data\\2019.1.2.predator.raw.data.high.risk.comparison.csv", row.names = FALSE)
+#write.csv(HR.comp,"Data\\2019.1.2.predator.raw.data.high.risk.comparison.csv", row.names = FALSE)
 
-#NOTE: might have to go back and just do Trials < 6 to compare all others
-# that depends on whether there is a trial effect
+# breaking this down into two separate dataframes: one for Trials 1-5 and one for Trial 6
+# Rationale: 1) only presence and sublethal predator activity is comparable in Trials 1-5
+#            2) Trial 6 was testing for cage effects only, and only high-risk caged and uncaged reefs were time-lapsed
 
-#doing exactly this now:
-#data frame for trials 1-5 in wide format
-t1.5.w<-pr1[pr1$Trial<6,]
-View(t1.5.w)
-#exporting data
-write.csv(t1.5.w,"Data\\2019.1.2.predator.raw.data.trials.1.5.wide.csv", row.names = FALSE)
+# data frame wide format to analyze Trials 1-5
+t1.5.w<- pr1 %>% filter(pr1$Trial != 6)
+t1.5.w$Treatment<-as.factor(t1.5.w$Treatment)
+#View(t1.5.w)
 
-# ^ this df will work for analyss for presence/absence, but not for sublethal or lethal
-#need to make df's to subset by treatment
+# ^ this df will work for analyses for presence/absence, but not for sublethal, because no predator could ever be close enough
+# to be perceived as a sublethal threat in the Low-risk treatment
+# I.e. I only want to compare scores among treatments that were comparable
 
-#going to drop low from the model and see if there are still differences
+# Need to make a new df without Low-risk treatment in Trials 1-5
 ptl.sub<-subset(t1.5.w,Treatment!="Low")
-View(ptl.sub)
-levels(ptl.sub$Treatment)
-
-#no formal analysis will be done for lethal, just make sure to plot it and
-# - include in the figure legend that no statistical test was run for high-risk caged
-# - in trials 1-5
+#View(ptl.sub)
+ptl.sub$Treatment<-as.factor(ptl.sub$Treatment)
+#levels(ptl.sub$Treatment)
 
 #ask M. Steele: if there are differences between caged and uncaged trts
 # - (e.g. presence of preds) do I have to remove that trial from the 
@@ -144,74 +136,215 @@ levels(ptl.sub$Treatment)
 # will see if there are statistical differences among trials
 
 #for trials 1-5 only (l, m, h (caged) only)
-trial.1.5.long<-pl[pl$Trial<6,]
-View(trial.1.5.long)
+trial.1.5.long<-pl %>% filter(pl$Trial != 6)
+#View(trial.1.5.long)
 
 #for trial 6 only (HR caged and uncaged)
-HR.long<-pl[pl$Trial==6,]
-View(HR.long)
+HR.long<-pl %>% filter(pl$Trial == 6)
+#View(HR.long)
 
-#calculating sample sizes and number of photos that were used to calc. proportions per time lapse####
+# No formal analysis will be done for lethal, but will include data in the plots to show that predators
+# were seen on the high-risk reefs when they had access to them (i.e. use df "t1.5.long" for plotting)
+
+# calculating sample sizes and number of photos that were used to calc. proportions per time lapse ####
 # average number of photos that went into each proportion per reef per treatment
 
 # a) including uncaged
 #had to do it in excel pivot table...
 
 #avg.number.of.photos
-#high	11.48 (12)
+#high	11.5 (12)
 #med	11.6 (12) 
 #low	12.1 (12)
 #uncaged	13.5 (14)
 
-# b) with HR caged and uncaged combined
+# Calculating sample sizes and arithmetic means using wide format df
 
-#avg.number.of.photos
-#high	11.8 (12)
-#med	11.6 (12) 
-#low	12.1 (12)
-
-#arithmetic means using wide format df (pr1), mainly for ss of treatments
-library(FSA)
-
-#with uncaged, only compared caged and uncaged high-risk in final trial
-Summarize(Present~T6.comparison,
-          data=HR.comp,
-          digits=3)
-# n:
-# H - 4
-# U - 4
-
-#with uncaged and caged combined, not thinking this is correct, see below
-Summarize(Present~Treatment,
-          data=pr1,
-          digits=3)
-# n:
-# L - 21
-# M - 20
-# H - 29
-
-#with HR caged only, using t1.4.w df, not including any data from t6
+# with HR caged only, using t1.4.w df, not including any data from Trial 6
 Summarize(Present~Treatment,
           data=t1.5.w,
           digits=3)
-# n:
-# L - 21
-# M - 20
-# H - 21
+# Low-risk: n = 21; mean = 0.401
+# Medium-risk: n =  20; mean = 0.536
+# High-risk: n =  21; mean = 0.533
 
-#using df "pr1" --> predator data in wide format
+# Comparing high-risk caged and uncaged treatments only in Trial 6
+Summarize(Present~T6.comparison,
+          data=HR.comp,
+          digits=3)
+# High-risk caged: n = 4; mean = 0.433 
+# High-risk uncaged: n = 4; mean = 0.683
 
+# analyses ####
+#NOTE:
+# analyzing mixed models with log-likelihood estimates and chi-square tests.
+# start with full model, then reduce model first by non-significant random effects, then by NS. fixed effects
+# want to definitely leave in Trial term as random effect, and Treatement, Year, T x Y, and avg.inhab as fixed effects.
+# remove all NS. interactions with the covariate (fixed and random)
 
-#all trials
-#going to evaluate predator activity with nested factor of trial - bring in avg.inhab? 
-# It might be compelling to bring that in, considering there preds might be attracted to reefs 
-# - with more fish on them?
+options(contrasts = c("contr.sum","contr.poly")) #this is important, run before ANOVA, will set SS to type III
 
-#comparison between high-risk caged and uncaged (trial 6 only)
+#model structure for random effects: all slopes are the same (effects are the same among trials), but intercepts are random (magnitude differs)
+## Note: use "REML=F" (maximum likelihood estimates) to compare models with log-likelihood estimates (Pinheiro & Bates, 2000; Bolker et al., 2009)
 
-#analyses####
-#NOTE: will need to test results among trials to see if there are any sig. differences based
-# - on trial alone, which might not allow me to group data from all trials together
+# 1 Trials 1-5, comparing predator presence and sublethal threat among Low-, Medium-, and High-risk caged treatments ####
+
+# 1a. predator presence ####
+glimpse(t1.5.w)
+
+# full model
+pre<-lmer(Present ~ Treatment*Year*avg.inhab + (1|Trial) + (1|Treatment:Trial) +
+           (1|Trial:avg.inhab)+(1|avg.inhab:Treatment:Trial), REML=F, t1.5.w)
+hist(resid(pre))
+qqnorm(resid(pre))
+qqline(resid(pre))
+plot(pre)
+summary(pre) # 0 variance attributed to all of the random effects. 
+# Will still work through log-likelihood, but if there are no effects of random variables, then I will run
+# - as a regular ANCOVA, not a mixed-model ANCOVA
+anova(pre)
+
+# There may be justification for pooling in this case, or at least not including Trial in the final model
+# I'm not sure if I would still do log-likelihood in that case, or if I would just run with lm
+
+#removing three-way interaction of random effect
+pre2<-update(pre, .~. -(1|avg.inhab:Treatment:Trial))
+summary(pre2)
+anova(pre2)
+
+anova(pre,pre2) #no difference in models when three-way interaction with random intercept is removed
+
+#next logical removal is the 1|treatment:trial term
+
+pre3<-update(pre2, .~. -(1|Treatment:Trial))
+summary(pre3)
+anova(pre3)
+
+anova(pre2,pre3) #no difference
+
+#next logical removal is the 1|Trial:avg.inhab term
+
+pre4<-update(pre3, .~. -(1|Trial:avg.inhab)) #all interactions with covariate that were N.S. were removed, including random effects
+## in fact, it may put more variance in the overall model, including variance for fixed effects
+summary(pre4) # trial accounts for 6% of the residual variance
+anova(pre4)
+
+anova(pre3,pre4) # P = 0.3939, doesn't suggest any difference due to the dropping of the random effect of Trial:avg.inhab
+
+#trial effect
+pre5<-update(pre2,.~. -(1|Trial))
+summary(pre5)
+anova(pre5)
+
+anova(pre2,pre5) # no sig. effect of trial
+
+#going to pool all trials, because there is no extra variance explained by trial
+#no longer dealing with a mixed model, so I have to change function to "lm"
+
+pre6<-lm(Present ~ Treatment*Year*avg.inhab, t1.5.w)
+hist(resid(pre6))
+qqnorm(resid(pre6))  
+qqline(resid(pre6))
+summary(pre6)
+anova(pre6)
+
+anova(pre4,pre6)
+
+# removing non-significant interactions with covariate
+pre7<-update(pre6, .~. -(Treatment:Year:avg.inhab))
+summary(pre7)
+anova(pre7)
+
+anova(pre7,pre6)
+
+#now want to take out non-significant interactions with covariate (avg.inhab)
+
+pre8<-lm(Present ~ Treatment*Year + avg.inhab, t1.5.w)
+hist(resid(pre8))
+qqnorm(resid(pre8))  
+qqline(resid(pre8))
+summary(pre8)
+anova(pre8)
+
+anova(pre7,pre8)
+
+# 1b. sublethal threat (compared among medium- and high-risk caged treatments)
+
+# full model
+pre<-lmer(Present ~ Treatment*Year*avg.inhab + (1|Trial) + (1|Treatment:Trial) +
+            (1|Trial:avg.inhab)+(1|avg.inhab:Treatment:Trial), REML=F, t1.5.w)
+hist(resid(pre))
+qqnorm(resid(pre))
+qqline(resid(pre))
+plot(pre)
+summary(pre) # 0 variance attributed to all of the random effects. 
+# Will still work through log-likelihood, but if there are no effects of random variables, then I will run
+# - as a regular ANCOVA, not a mixed-model ANCOVA
+anova(pre)
+
+# There may be justification for pooling in this case, or at least not including Trial in the final model
+# I'm not sure if I would still do log-likelihood in that case, or if I would just run with lm
+
+#removing three-way interaction of random effect
+pre2<-update(pre, .~. -(1|avg.inhab:Treatment:Trial))
+summary(pre2)
+anova(pre2)
+
+anova(pre,pre2) #no difference in models when three-way interaction with random intercept is removed
+
+#next logical removal is the 1|treatment:trial term
+
+pre3<-update(pre2, .~. -(1|Treatment:Trial))
+summary(pre3)
+anova(pre3)
+
+anova(pre2,pre3) #no difference
+
+#next logical removal is the 1|Trial:avg.inhab term
+
+pre4<-update(pre3, .~. -(1|Trial:avg.inhab)) #all interactions with covariate that were N.S. were removed, including random effects
+## in fact, it may put more variance in the overall model, including variance for fixed effects
+summary(pre4) # trial accounts for 6% of the residual variance
+anova(pre4)
+
+anova(pre3,pre4) # P = 0.3939, doesn't suggest any difference due to the dropping of the random effect of Trial:avg.inhab
+
+#trial effect
+pre5<-update(pre2,.~. -(1|Trial))
+summary(pre5)
+anova(pre5)
+
+anova(pre2,pre5) # no sig. effect of trial
+
+#going to pool all trials, because there is no extra variance explained by trial
+#no longer dealing with a mixed model, so I have to change function to "lm"
+
+pre6<-lm(Present ~ Treatment*Year*avg.inhab, t1.5.w)
+hist(resid(pre6))
+qqnorm(resid(pre6))  
+qqline(resid(pre6))
+summary(pre6)
+anova(pre6)
+
+anova(pre4,pre6)
+
+# removing non-significant interactions with covariate
+pre7<-update(pre6, .~. -(Treatment:Year:avg.inhab))
+summary(pre7)
+anova(pre7)
+
+anova(pre7,pre6)
+
+#now want to take out non-significant interactions with covariate (avg.inhab)
+
+pre8<-lm(Present ~ Treatment*Year + avg.inhab, t1.5.w)
+hist(resid(pre8))
+qqnorm(resid(pre8))  
+qqline(resid(pre8))
+summary(pre8)
+anova(pre8)
+
+anova(pre7,pre8)
 
 #2020.1.30.edit, just comparing HR caged and uncaged plots with a t-test for each distinction
 #1) present
