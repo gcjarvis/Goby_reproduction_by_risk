@@ -1,70 +1,60 @@
-# Description: finished new data collection for ptl, wrangling and reanalyzing
-# - going to wrangle raw(ish) data, in R script
+# Description: Analyses and plots for predator behavior in Jarvis and Steele
 # Author: George C Jarvis
-# Date: Thu Jan 02 21:22:03 2020
-# Notes: I went through and condensed the raw data down as much as I could:
-#  A) I took out species, and condensed all observations down to a single row per reef
-#  B) For analyses, data need to be in wide format, with separate categories for each photo class
-#  C) For plotting, data need to be in short format (need column for "predator category")
-# Lastly, it's important to note how these are being coded for figures:
-# if a single predator was seen in a photo, it was marked as a 1 for containing predator
-# That's regardless of where the predator was seen in the frame
-# I mention this because if a predator were seen in a photo and at the edge of a sm. cage
-# - then it would count for both present, and sublethal risk
-# I did not, however, count lethal predators as being both sublethal and lethal (i.e. they
-# - were only counted as one or the other)
+# Date: Sun May 31 10:38:29 2020
+# Notes: Re: coding for predator activity:
+# 1) Time-lapses for each reef were subsampled, and 10-20 photos were analyzed per time lapse, depending on its duration
+# 2) Each photo received a single score for predator presence (0 if no predators present, 1 if any predators present)
+# 3) If predators were present, they were scored based on their location, relative to reef structure
+#   a. if far from structure, it was marked as present, but not as either lethal or sublethal (i.e. low threat to gobies)
+#   b. if close to structure but not close enough to consume gobies (i.e. in medium risk, high-risk caged, or high-risk uncaged
+#   - treatments only), then the predator was marked as a 1 for sublethal threat
+#   c. if close to structure and close enough to consume gobies (i.e. in high-risk caged and high-risk uncaged
+#   - treatments only), then the predator was marked as a 1 for lethal threat
+# 4) If there were multiple predators in the photo, and they were seen in different locations relative to the reef, then 
+#   - each category for predator scores could have received a value of 1
+# 5) Each category (presence, sublethal, lethal) received a score of either 1 or 0 for each photo
 # --------------
 
 rm(list=ls())
 
 #packages####
-library(sciplot)
 library(lme4)
-library(car)
 library(lmerTest)
-library(dplyr)
 library(ggplot2)
-library(MASS)
-library(nlme)
-library(pwr)
-library(vegan)
-library(multcomp)
 library(tidyverse)
-library(tidyr)
-library(plyr)
-library(qpcR)#for cbind.na
 
 #type III ANOVA
 options(contrasts = c("contr.sum","contr.poly")) #this is important, run before ANOVA, will set SS to type III
 
 #importing data####
-#raw data
-pred<-read.csv(file = "Data/2019.1.2.ptl.raw.data.csv")
-#View(pred)
+pred<-read.csv(file = "Data/2020_5_31_predator_raw_data.csv")
+View(pred)
 #removing NA's
 pred.rm.na<-na.omit(pred)
 head(pred.rm.na)
 
+#rename "Treatment.combo" to "Treatment"
+pred.rm.na<-rename(pred.rm.na, Treatment = Treatment.combo)
+pred.rm.na<-rename(pred.rm.na, T6.comparison = Treatment.t6)
+
 #adding two columns for year, one for year (int), and one for year.fact (fact) to df;
 # - as a proxy for tagging procedure, where trials 1-3 = 2017, and 4-6 = 2018
 pred.rm.na$Year <- ifelse(pred.rm.na$Trial <=3, 2017, 2018)
-#want it as a factor? Going to make a variable with it as a factor, run the model, and see if I get different results
-pred.rm.na$Year.fact<- as.factor(pred.rm.na$Year)
-#View(pred.rm.na)
 
-#exporting raw data, with each photo within a reef as an observation (n=10 photos minimum)
+#making year and trial factors for analysis
+pred.rm.na$Year<- as.factor(pred.rm.na$Year)
+pred.rm.na$Trial<-as.factor(pred.rm.na$Trial)
 
-# These are the data in wide format
-write.csv(pred.rm.na,"Data\\2019.1.2.predator.raw.data.csv", row.names = FALSE)
-#write.csv(Your DataFrame,"Path where you'd like to export the DataFrame\\File Name.csv", row.names = FALSE)
+# exporting data in wide format
+# write.csv(pred.rm.na,"Data\\2019.1.2.predator.raw.data.csv", row.names = FALSE)
 
-View(pred.rm.na)#level of observation is photo per time-lapse per reef, but replicate will be avg. proportion per reef
-
-#importing egg count data for avg. number of gobies inhabiting each reef
-# Will add this to the data when I wrangle them into wide format
+# importing egg count data for avg. number of gobies inhabiting each reef
+# Will add this to predator data when I wrangle them into wide format
 repro<-read.csv(file= "Data/egg.counts.2019.12.23.csv")
 #making Year.fact a factor
-repro$Year.fact<-as.factor(repro$Year.fact)
+repro$Year<-as.factor(repro$Year)
+repro$Trial<-as.factor(repro$Trial)
+
 
 #data wrangling####
 
@@ -74,50 +64,31 @@ repro$Year.fact<-as.factor(repro$Year.fact)
 # - predators close enough to be a sublethal threat, 
 # - and predators close enough to be a lethal threat
 
-# Grouping by Trial, Reef, Treatment.combo, and Treatment.t6 (for t6 comparison) 
+# Grouping by Year, Trial, Reef, Treatment, and Treatment.t6 (for t6 comparison) 
 # Read number is the level of observation
-# Each reef is a replicate, so that is what will be used to calculate means and SEM
+# Each reef is a replicate, so that is what will be used to calculate means and SEM for plots
 
 p<-with(pred.rm.na, aggregate(list(contained.pred,sublethal.threat,lethal.threat), 
-                    list(Trial=Trial,Reef=Reef,Treatment=Treatment,
-                         T6.comparison=T6.comparison,Year=Year,Year.fact=Year.fact), mean))
-View(p)
+                              list(Trial=Trial,Reef=Reef,Treatment=Treatment,
+                                   T6.comparison=T6.comparison,Year=Year), mean))
+#View(p)
 
-#Column names are not correct, need to change them
+#Column names for columsn 6, 7 and 8 are not correct, need to change them to "Present", "Sublethal.Threat", 
+# and "Lethal.Threat", respectively
 
-#viewing column names to specify which ones I want to change
-#columns correspond to following categories:
+p <- p %>% 
+  rename(Present = 6, Sublethal.Threat = 7, Lethal.Threat = 8)
+#View(p)
 
-colnames(p)
+# Bringing in avg. numer of gobies inhabiting each reef as well, adding it to "p" df
 
-#[presence] [7]"c.0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..1L..0L..0L.."  
-#[sublethal] [8]"c.0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L.."  
-#[lethal] [9]"c.0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L...1"
-
-#renaming columns with base R
-# Rename column names
-names(p)[names(p) == "c.0L..0L..1L..0L..1L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L.."] <- "Present"
-names(p)[names(p) == "c.0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L.."] <- "Sublethal.Threat"
-names(p)[names(p) == "c.0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L..0L...1"] <- "Lethal.Threat"
-p
-View(p)
-
-#want to bring in avg. numer of gobies inhabiting each reef as well, adding it to "p" df
-#bringing in egg count data, so I can assign avg.inhab variable to the corresponding rows in my p df
-# - There are uneven #'s of rows between the two df's, so I'll see what happens with that
-
-pr<-left_join(p,repro,by=c("Trial","Reef","Treatment","T6.comparison","Year","Year.fact"))
+pr<-left_join(p,repro,by=c("Trial","Reef","Treatment","T6.comparison","Year"))
 View(pr)
 
 #want to drop unnecessary columns from repro df, i.e. everything but avg.inhab
 # they are columns 8:12 and 14:16
 pr1<-pr[-c(10:14,16)]
 View(pr1)
-
-# this looks good to me, checked with repro data to make sure avg.inhab values were correct
-
-#exporting data in wide format
-write.csv(pr1,"Data\\2019.1.3.predator.data.wide.format.with.avg.inhab.csv", row.names = FALSE)
 
 #long format for plotting#### 
 # p-long = "pl"
@@ -128,15 +99,18 @@ pr1
 
 pl<-pr1 %>% gather(Predator.class, Score, Present:Lethal.Threat)
 View(pl)
-#exporting in long format
-write.csv(pl,"Data\\2019.1.3.predator.data.long.format.with.avg.inhab.csv", row.names = FALSE)
 
-#separate df named "HR.comp" to compare responses between HR-caged and -uncaged treatments
+# Creating separate df named "HR.comp" to compare responses between HR-caged and -uncaged treatments in Trial 6
 # Will not include year or trial in the model for analyses
 # I only did time lapses on high-risk caged and uncaged treatments for T6
 
-HR.comp<-pr1[pr1$Trial==6,]
+HR.comp<-p[p$Trial==6,]
 View(HR.comp)
+
+#removing Trial and Year columns
+
+HR.comp<-HR.comp %>% select (-c(Trial,Year))
+
 #exporting data
 write.csv(HR.comp,"Data\\2019.1.2.predator.raw.data.high.risk.comparison.csv", row.names = FALSE)
 
@@ -358,7 +332,7 @@ anova(modpi, type='marginal')
 
 #aii) reduced, no 3-way
 modpii<-lme(Present~Treatment*Year.fact+(Treatment*avg.inhab)+(Year.fact*avg.inhab)+
-          avg.inhab,random=~1|Trial,t1.5.w,method="REML")
+              avg.inhab,random=~1|Trial,t1.5.w,method="REML")
 hist(resid(modpii))
 qqnorm(resid(modpii))
 qqline(resid(modpii))
@@ -367,7 +341,7 @@ anova(modpii, type='marginal')
 
 #aiii) reduced no 2-ways with covariate
 modpiii<-lme(Present~Treatment*Year.fact+
-              avg.inhab,random=~1|Trial,t1.5.w,method="REML")
+               avg.inhab,random=~1|Trial,t1.5.w,method="REML")
 hist(resid(modpiii))
 qqnorm(resid(modpiii))
 qqline(resid(modpiii))
@@ -393,8 +367,8 @@ anova(modpa, type='marginal')
 
 #ai) removing three-way interaction with covariate
 modpa.1<-lme(Present~Treatment*Year.fact+(Treatment*avg.inhab)+
-            (Year.fact*avg.inhab)+avg.inhab,random=~1|Trial,
-            pr1,method="REML")
+               (Year.fact*avg.inhab)+avg.inhab,random=~1|Trial,
+             pr1,method="REML")
 qqnorm(resid(modpa.1))
 qqline(resid(modpa.1))
 summary(modpa.1)
@@ -452,7 +426,7 @@ Summarize(Sublethal.Threat~Treatment,
 
 #ai) removing three-way interaction with covariate
 modsii<-lme(Sublethal.Threat~Treatment*Year.fact+(Treatment*avg.inhab)+
-            (Year.fact*avg.inhab)+avg.inhab,random=~1|Trial,
+              (Year.fact*avg.inhab)+avg.inhab,random=~1|Trial,
             ptl.sub,method="REML")
 hist(resid(modsii))
 qqnorm(resid(modsii))
@@ -462,7 +436,7 @@ anova(modsii, type='marginal')
 
 #aii) removing interactions with covariate
 modsiii<-lme(Sublethal.Threat~Treatment*Year.fact+avg.inhab,random=~1|Trial,
-            ptl.sub,method="REML")
+             ptl.sub,method="REML")
 hist(resid(modsiii))
 qqnorm(resid(modsiii))
 qqline(resid(modsiii))
@@ -471,7 +445,7 @@ anova(modsiii, type='marginal')
 
 #aiii) removing covariate altogether
 modsiv<-lme(Sublethal.Threat~Treatment*Year.fact,random=~1|Trial,
-             ptl.sub,method="REML")
+            ptl.sub,method="REML")
 hist(resid(modsiv))
 qqnorm(resid(modsiv))
 qqline(resid(modsiv))
@@ -633,7 +607,7 @@ t1.5.plot<- ggplot(pred1.5, aes(x=Treatment, y=x, fill=Predator.class)) +
   theme(legend.title =element_text(size=20))+
   theme(axis.ticks.x = element_blank()) + scale_y_continuous(expand = c(0,0),limits = c(0,0.605))+
   scale_fill_discrete(name="Threat from Predators", labels=c("Low perceived, no actual threat", "High perceived, no actual threat", 
-                                                               "High perceived, actual threat"))
+                                                             "High perceived, actual threat"))
 t1.5.plot + geom_linerange(aes(ymin=x-se, ymax=x+se), size=0.5,   
                            position=position_dodge(.90)) + theme(text = element_text(family="Arial"))
 
@@ -647,7 +621,7 @@ dev.off()
 pred.6<-with(HR.long, aggregate((Score),list(T6.comparison=T6.comparison,Predator.class=Predator.class),mean))
 #View(pred.6)
 pred.6$se<-with(HR.long, aggregate((Score),list(T6.comparison=T6.comparison,Predator.class=Predator.class), 
-                                           function(x) sd(x)/sqrt(length(x))))[,3]
+                                   function(x) sd(x)/sqrt(length(x))))[,3]
 #ordering Predator.class values
 pred.6$Predator.class<-ordered(pred.6$Predator.class, c("Present","Sublethal.Threat","Lethal.Threat"))
 
