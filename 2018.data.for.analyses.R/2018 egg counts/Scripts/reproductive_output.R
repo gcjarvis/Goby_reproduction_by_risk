@@ -75,6 +75,18 @@ plot(me)
 summary(me)
 anova(me)
 
+boxplot(egg.week~Treatment,repro)
+
+me$coeff
+
+ranef(me)$Trial
+
+coef(me)
+
+rand(me)
+
+levels(repro$Treatment)
+
 #same model, but with separate slopes for each trial ((avg.inhab|Treatment:Trial))
 #doesn't appear to make much of a difference, and the two models are not 
 #mer<-lmer(egg.week ~ Treatment*Year*avg.inhab + (1|Trial) + (1|Treatment:Trial) +
@@ -227,6 +239,10 @@ plot(mes)
 summary(mes)
 anova(mes)
 
+rand(mes)# trial is the only random effect that seems to exaplain any of the variance
+
+#note: this is only the case with sqrt-transformed data
+
 anova(me,mes)# seems like the log-transformed data might be a better model, based on lower AIC
 
 #removing three-way interaction of random effect
@@ -306,6 +322,12 @@ anova(mes9)
 
 anova(mes8,mes9)#chisq = 27.78      df = 1      p = 1.36e-10, super significant, so don't want to remove that term
 #also going to include the estimate for avg.inhab from the previous model (mes8)
+
+# after doing log-likelihood tests, only random effect that explained any variance was 
+# trial, so I'm going to rerun the reduced model with that, and the non-significant
+# interactions between fixed effects
+
+
 
 # - Treatment*Year.fact
 

@@ -116,14 +116,25 @@ anova(pe7,pe6)
 pe8<-update(pe7, .~. -(Treatment:avg.inhab)) 
 summary(pe8) 
 anova(pe8)
+ran<-ranef(pe8)$Trial
+
+coef(pe8)$Trial
 
 anova(pe7,pe8)
+
+pe8a<-lm(proportion.exposed~Treatment*Year*avg.inhab, data=behave) 
+summary(pe8a) 
+anova(pe8a)
+
+anova(pe8,pe8a)
 
 #me8 is the final model that I will likely end up with (those are all of the fixed and random factors that I'm interested in)
 hist(resid(pe8))#not bad
 #LS-adjusted means from model
 emmeans(pe8, pairwise~Treatment) #warning message re: interactions, but I think it's okay
 boxplot(proportion.exposed~Treatment,data=behave)# variances don't look too bad, and medians look pretty good to me (i.e. match up with LS-means for the most part)
+
+boxplot(proportion.exposed~Trial,data=behave)
 
 #dropping the fixed effects that I have reduced the model to do the log-likelihood estimates
 #NOTE: m8 is the fully-reduced model, so just have to jeep iterating that model +/- individual fixed factors of interest
