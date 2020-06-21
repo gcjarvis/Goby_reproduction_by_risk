@@ -34,8 +34,8 @@ reco.t6<-reco[reco$Trial==6,]
 #subset treatments, caged and uncaged only (T6.comparison)
 #subsetting by multiple character factors within a variable. Awesome code!
 reco.t6.comp<-reco.t6[reco.t6$T6.comparison == "High" | reco.t6$T6.comparison == "Control", ]
-head(reco.t6.comp)
-view(reco.t6.comp)
+#head(reco.t6.comp)
+#view(reco.t6.comp)
 
 #only need to do a t-test for trial 6
 # are there differences in survivorship between caged and uncaged reefs?
@@ -43,18 +43,18 @@ view(reco.t6.comp)
 #need to reframe the data for trial 6, putting it into long format
 
 reco.t6.comp<-as_tibble(reco.t6.comp)
-reco.t6.comp
+#reco.t6.comp
 
 t6.comp<-reco.t6.comp %>% pivot_wider(names_from = T6.comparison, values_from = Survivorship)
-View(t6.comp)
+#View(t6.comp)
 
 #exporting data, then reimporting back into R
-write.csv(t6.comp,"Data\\2020_24_5_recollections_t6_comp.csv", row.names = FALSE)
+#write.csv(t6.comp,"Data\\2020_24_5_recollections_t6_comp.csv", row.names = FALSE)
 
 #removed NA's and empty rows, also removed all unnecessary columns
 
 t6.comp.wrangled<- read.csv("Data\\2020_24_5_recollections_t6_comp.csv")
-View(t6.comp.wrangled)
+#View(t6.comp.wrangled)
 
 # analyses ####
 

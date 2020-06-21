@@ -30,8 +30,8 @@ behave$Trial<- as.factor(behave$Trial)
 behave$avg.inhab<-(ceiling((behave$Recollection+20)/2))
 
 #data viz
-pairs(behave)# data viz, but also seems to mess up the plot parameters?
-dev.off() #turns off the plot parameters
+#pairs(behave)# data viz, but also seems to mess up the plot parameters?
+#dev.off() #turns off the plot parameters
 
 #changing levels of Treatment so the reference level is Low, 
 ## - then Medium ("Treatment1"), and High ("Treatment2"), this will make sense for the summary output
@@ -62,6 +62,37 @@ qqline(resid(pe))
 plot(pe)
 summary(pe) #don't seem to be very many differences based on trial
 anova(pe)
+
+rand(pe) # exposure did not change based on any random effects, removing trial from the
+# model and running as a standard ANCOVA
+
+#testing full model first, then reducing if necessary
+pe.1<-lm(proportion.exposed~Treatment*Year*avg.inhab, data = behave)
+hist(resid(pe.1))
+qqnorm(resid(pe.1))
+qqline(resid(pe.1))
+plot(pe.1)
+summary(pe.1)
+anova(pe.1)
+
+#no sig. effect of 3-way interaction or between fixed effects and covariate; removing
+# those terms from the model
+
+pe.2<-lm(proportion.exposed~Treatment*Year+avg.inhab, data = behave)
+hist(resid(pe.2))
+qqnorm(resid(pe.2))
+qqline(resid(pe.2))
+plot(pe.2)
+summary(pe.2)
+anova(pe.2)
+
+#calculating LS means based on this linear model
+emmeans(pe.2, pairwise~Treatment)
+
+#removing covariate b/c not significant
+pe.3<-lm(proportion.exposed~Treatment*Year, data = behave)
+anova(pe.3)
+
 
 #removing three-way interaction of random effect
 pe2<-update(pe, .~. -(1|avg.inhab:Treatment:Trial))
@@ -182,6 +213,32 @@ plot(dm)
 boxplot(total.dist.moved~Treatment,data=behave) #slightly higher variance in Low treatment
 summary(dm) #seems to be a bit more variation by trial
 anova(dm)
+
+rand(dm) #trial is significant, all others are not, so going to remove them from model
+
+#checking full model, then reducing fixed effects if necessary
+dm.1<-lmer(total.dist.moved~Treatment*Year*avg.inhab+(1|Trial), REML=F, data = behave)
+anova(dm.1)
+
+#removing non-significant interactions (3-way and NS int with covariate)
+dm.2<-lmer(total.dist.moved~Treatment*Year+avg.inhab+(1|Trial), REML=F, data = behave)
+anova(dm.2)
+
+#seeing a treatment effect now? Treatment: P = 0.047, so I would say that P<0.05,
+# but barely
+
+#checking out LS means
+
+emmeans(dm.2, pairwise~Treatment)
+boxplot(total.dist.moved~avg.inhab,data=behave) #total distance moved increased with
+# an increased number of gobies on the reef, regardless of risk level
+
+#removing number of inhabitants
+dm.3<-lmer(total.dist.moved~Treatment*Year+(1|Trial), REML=F, data = behave)
+anova(dm.3)
+
+emmeans(dm.3, pairwise~Treatment)
+boxplot(total.dist.moved~avg.inhab,data=behave)
 
 #removing three-way interaction of random effect
 dm2<-update(dm, .~. -(1|avg.inhab:Treatment:Trial))
@@ -316,6 +373,29 @@ boxplot(bites.min~Treatment,data=behave) #slightly higher variance in Low treatm
 summary(fr) #seems to be a bit more variation by trial
 anova(fr)
 
+rand(fr) #trial explains some of the variance, will keep it in, all other random
+# effects removed
+
+fr.1<-lmer(bites.min~Treatment*Year*avg.inhab+(1|Trial), REML=F, data=behave)
+rand(fr.1)
+anova(fr.1)
+
+#removing higher-level interactions
+
+fr.2<-lmer(bites.min~Treatment*Year+avg.inhab+(1|Trial), REML=F, data=behave)
+summary(fr.2)
+anova(fr.2)
+
+#seems that the variance explained by trial goes away when I take away the higher-level
+# interactions between fixed effects, going to remove it
+
+fr.3<-lm(bites.min~Treatment*Year+avg.inhab, data=behave)
+anova(fr.3)
+
+#removing avg.inhab
+fr.4<-lm(bites.min~Treatment*Year, data=behave)
+anova(fr.4)
+
 #removing three-way interaction of random effect
 fr2<-update(fr, .~. -(1|avg.inhab:Treatment:Trial))
 summary(fr2)
@@ -426,6 +506,19 @@ boxplot(courtship.min~Treatment,data=behave) #slightly higher variance in Low tr
 summary(ci) #seems to be a bit more variation by trial
 anova(ci)
 
+rand(ci) #will keep trial, explains some of the variance
+
+ci.1<-lmer(courtship.min~Treatment*Year*avg.inhab+(1|Trial), REML=F, behave)
+anova(ci.1)
+
+#removing NS interactions
+ci.2<-lmer(courtship.min~Treatment*Year+avg.inhab+(1|Trial), REML=F, behave)
+anova(ci.2)
+
+# removing covariate
+ci.3<-lmer(courtship.min~Treatment*Year+(1|Trial), REML=F, behave)
+anova(ci.3)
+
 #removing three-way interaction of random effect
 ci2<-update(ci, .~. -(1|avg.inhab:Treatment:Trial))
 summary(ci2)
@@ -524,7 +617,7 @@ anova(ci12)
 
 anova(ci10,ci12)
 
-# 1e. interactins with conspecifics ####
+# 1e. movement rate ####
 mr<-lmer(movements.min~Treatment*Year*avg.inhab+(1|Trial) + (1|Treatment:Trial) +
            (1|Trial:avg.inhab)+(1|avg.inhab:Treatment:Trial), REML=F, behave)
 hist(resid(mr))
@@ -534,6 +627,20 @@ plot(mr)
 boxplot(movements.min~Treatment,data=behave) #slightly higher variance in Low treatment
 summary(mr) #seems to be a bit more variation by trial
 anova(mr)
+
+rand(mr) #going to remove trial, seems like it doesn't explain much variation
+# P = 0.94
+
+mr.1<-lm(movements.min~Treatment*Year*avg.inhab, data = behave)
+anova(mr.1)
+
+# removing NS interactions
+mr.2<-lm(movements.min~Treatment*Year+avg.inhab, data = behave)
+anova(mr.2)
+
+#removing covariate
+mr.3<-lm(movements.min~Treatment*Year, data = behave)
+anova(mr.3)
 
 #removing three-way interaction of random effect
 mr2<-update(mr, .~. -(1|avg.inhab:Treatment:Trial))
