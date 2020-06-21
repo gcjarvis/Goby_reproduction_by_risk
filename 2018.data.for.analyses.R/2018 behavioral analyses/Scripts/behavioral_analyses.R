@@ -28,6 +28,8 @@ behave$Trial<- as.factor(behave$Trial)
 #making the variable "avg.inhab" ((20+reco)/2), rounded to the nearest whole fish
 #using the average number of inhabitants per reef as the covariate in mixed models
 behave$avg.inhab<-(ceiling((behave$Recollection+20)/2))
+
+#data viz
 pairs(behave)# data viz, but also seems to mess up the plot parameters?
 dev.off() #turns off the plot parameters
 
