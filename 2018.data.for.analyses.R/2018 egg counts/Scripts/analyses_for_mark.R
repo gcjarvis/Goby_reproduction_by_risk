@@ -1,8 +1,9 @@
-# Description: Script for reproductive output from Jarvis and Steele 
-# Author: George C Jarvis
-# Date: Thu Apr 09 15:14:09 2020
-# Notes:
-# --------------
+# --------------------------------------
+# Description: quick analyses before meeting with Mark
+# Author: George C. Jarvis
+# Date: Tue Jul 28 06:54:38 2020
+# Notes: rerun original analysis now that I've corrected Trial 1 eggs per week (was 2 weeks long, not 1)
+# --------------------------------------
 
 rm(list=ls())
 
@@ -14,7 +15,12 @@ library(emmeans) #for generating least-squares adjusted means from models (will 
 ## back-transform means if data transformation is needed)
 
 #importing dataset####
-repro<-read.csv("Data/goby_reproduction.2020.4.9.csv")
+repro<-read.csv("Data/egg.counts_correced_trial_1.csv")
+repro1<-read.csv("Data/15.7.20.Jarvis_egg_counts-per_capita_biomass_fem.csv")
+repro1<-na.omit(repro1) #remove cases where no females were recollected
+
+repro1$Year<- as.factor(repro1$Year)
+repro1$Trial<-as.factor(repro1$Trial)
 
 #intial data viz
 pairs(repro)
@@ -22,19 +28,20 @@ pairs(repro)
 #data manipulation####
 
 #adding column for average number of inhabitants throughout the trial, rounded to nearest whole number of fish
-repro$avg.inhab<-(ceiling((repro$Recollection+20)/2))
+#repro$avg.inhab<-(ceiling((repro$Recollection+20)/2))
 
 #adding egg/week variable to the dataset for comparisons among trials of differing length
-repro<-repro %>%
-  mutate(egg.week = ifelse(Trial<4, Egg.count/1,
-                           ifelse(Trial == 4| Trial == 5, (ceiling(Egg.count/4)),
-                                  ifelse(Trial == 6, (ceiling(Egg.count/2)), NA))))
+#repro<-repro %>%
+#  mutate(egg.week = ifelse(Trial<4, Egg.count/1,
+#                           ifelse(Trial == 4| Trial == 5, (ceiling(Egg.count/4)),
+#                                  ifelse(Trial == 6, (ceiling(Egg.count/2)), NA))))
 
 #adding a column for year (as a proxy for tagging procedure), where trials 1-3 = 2017, and 4-6 = 2018
 repro$Year <- ifelse(repro$Trial <=3, 2017, 2018)
 #making Year and Trial factors
 repro$Year<- as.factor(repro$Year)
 repro$Trial<-as.factor(repro$Trial)
+repro$Treatment.fact<-as.factor(repro$Treatment)
 
 #sqrt-transforming egg counts to better satisfy assumptions
 repro$sqrt.egg.week<-sqrt(repro$egg.week)
@@ -85,7 +92,7 @@ coef(me)
 
 rand(me)
 
-levels(repro$Treatment)
+levels(repro$Treatment.fact)
 
 #same model, but with separate slopes for each trial ((avg.inhab|Treatment:Trial))
 #doesn't appear to make much of a difference, and the two models are not 
@@ -231,7 +238,7 @@ boxplot(egg.week~T6.comparison,data=repro.t6)# variances don't look too bad
 # 1c. same analysis with log-likelihood estimates, but with sqrt.eggs as response####
 ## all I have to do is change the orignial model
 mes<-lmer(sqrt.egg.week ~ Treatment*Year*avg.inhab + (1|Trial) + (1|Treatment:Trial) +
-           (1|Trial:avg.inhab)+(1|avg.inhab:Treatment:Trial), REML=F, repro)
+            (1|Trial:avg.inhab)+(1|avg.inhab:Treatment:Trial), REML=F, repro)
 hist(resid(mes))
 qqnorm(resid(mes))
 qqline(resid(mes))
@@ -380,31 +387,6 @@ anova(mes14)
 emmeans(mes14, pairwise~T6.comparison)
 boxplot(sqrt.egg.week~T6.comparison,data=repro.t6)# variances don't look too bad
 
-#7_14_20 revisiting, trying analyses without avg.inhab#####
-
-me<-lmer(egg.week ~ Treatment*Year + (1|Trial) + (1|Treatment:Trial), REML=F, repro)
-hist(resid(me))
-qqnorm(resid(me))
-qqline(resid(me))
-plot(me)
-summary(me)
-anova(me)
-
-#sqrt-transformed egg counts
-me<-lmer(sqrt.egg.week ~ Treatment*Year*Reef + (1|Trial), REML=F, repro)
-hist(resid(me))
-qqnorm(resid(me))
-qqline(resid(me))
-plot(me)
-summary(me)
-anova(me)
-
-mes12<-update(mes10,.~. -(Year))
-summary(mes12)
-anova(mes12)
-
-anova(mes10,mes12)
-
 #plotting ANCOVA figure for RAW data; this is what I present in the manuscript####
 
 #Order the treatments: Low --> Med --> High
@@ -433,3 +415,137 @@ anc1<-ggplot(repro, aes(avg.inhab, egg.week, shape=Treatment.ord, linetype=Treat
 anc1
 
 #dev.off()
+
+# rerunning same model, but with trial as fixed factor ####
+
+fixed_T<-aov(egg.week ~ Treatment*Year*avg.inhab*(Trial%in%Year), repro)
+hist(resid(fixed_T))
+qqnorm(resid(fixed_T))
+qqline(resid(fixed_T))
+plot(fixed_T)
+summary(fixed_T)
+anova(fixed_T)
+
+boxplot(egg.week~Treatment,repro)
+
+me2<-update(fixed_T, .~. -(Treatment:Year:avg.inhab:Trial))
+summary(me2)
+anova(me2)
+
+anova(fixed_T,me2)
+
+me3<-update(me3, .~. -(Year:avg.inhab:Trial))
+summary(me3)
+anova(me3)
+
+anova(me2,me3) #error?
+
+me4<-update(me3, .~. -(Treatment:Year:avg.inhab))
+summary(me4)
+anova(me4)
+
+anova(me3,me4)
+
+me5<-update(me4, .~. -(Year:avg.inhab))
+summary(me5)
+anova(me5)
+
+anova(me4,me5)
+
+m1<-aov(egg.week ~ Treatment*Year+avg.inhab+(Trial%in%Year), repro)
+hist(resid(m1))
+qqnorm(resid(m1))
+qqline(resid(m1))
+plot(m1)
+summary(m1)
+anova(m1)
+
+
+m1a<-aov(egg.week ~ Treatment*Year+avg.inhab+(Trial%in%Year)+Treatment*(Trial%in%Year), repro)
+hist(resid(m1a))
+qqnorm(resid(m1a))
+qqline(resid(m1a))
+plot(m1a)
+summary(m1a)
+anova(m1a)
+
+anova(m1,m1a)
+
+boxplot(egg.week~(Trial%in%Year), repro)
+
+boxplot(egg.week~Treatment*(Trial%in%Year), repro)
+
+# runnning per capita output as response variable with same model
+head(repro1)
+
+mcap<-aov(reproduction_per_capita_female_biomass_per_day_per_gram ~ Treatment*Year+recollection_female+(Trial%in%Year), repro1)
+hist(resid(mcap))
+qqnorm(resid(mcap))
+qqline(resid(mcap))
+plot(mcap)
+summary(mcap)
+anova(mcap)
+
+boxplot(reproduction_per_capita_female_biomass_per_day_per_gram~(Trial%in%Year), repro1)
+
+mcap1<-aov(reproduction_per_capita_female_biomass_per_day_per_gram ~ Treatment*Year+recollection_female+Treatment*(Trial%in%Year), repro1)
+hist(resid(mcap1))
+qqnorm(resid(mcap1))
+qqline(resid(mcap1))
+plot(mcap1)
+summary(mcap1)
+anova(mcap1) #no trial x treatment effect
+
+boxplot(recollection_female~Treatment, repro1)
+
+mcap2<-aov(reproduction_per_capita_female_biomass_per_day_per_gram ~ Treatment*Year+recollection_female
+           +Treatment*(Trial%in%Year)+Treatment*recollection_female, repro1)
+hist(resid(mcap2))
+qqnorm(resid(mcap2))
+qqline(resid(mcap2))
+plot(mcap2)
+summary(mcap2)
+anova(mcap2)
+
+# findings: 1) sig. differences by trial when included as a nested fixed factor. 
+# 2) Same qualitative results for per capita reproduction per female biomass per day (reproduction per female per gram per day)
+# 3) 
+
+#trial as random
+mcap3<-lmer(reproduction_per_capita_female_biomass_per_day_per_gram ~ Treatment*Year+recollection_female+
+           Treatment*recollection_female+(1|Trial)+(1|Treatment:Trial)+(1|recollection_female:Trial), REML = F, repro1)
+hist(resid(mcap3))
+qqnorm(resid(mcap3))
+qqline(resid(mcap3))
+plot(mcap3)
+summary(mcap3)
+anova(mcap3)
+
+### biomass recollected
+
+mcap<-aov(per_capita_female_biomass ~ Treatment*Year+recollection_female+(Trial%in%Year), repro1)
+hist(resid(mcap))
+qqnorm(resid(mcap))
+qqline(resid(mcap))
+plot(mcap)
+summary(mcap)
+anova(mcap)
+
+mcap<-aov(per_capita_female_biomass ~ Treatment*Year+recollection_female+Treatment*(Trial%in%Year), repro1)
+hist(resid(mcap))
+qqnorm(resid(mcap))
+qqline(resid(mcap))
+plot(mcap)
+summary(mcap)
+anova(mcap)
+
+boxplot(per_capita_female_biomass~Treatment, repro1)
+
+mcap<-lmer(per_capita_female_biomass ~ Treatment*Year+recollection_female+(1|Trial), repro1)
+hist(resid(mcap))
+qqnorm(resid(mcap))
+qqline(resid(mcap))
+plot(mcap)
+summary(mcap)
+anova(mcap)
+
