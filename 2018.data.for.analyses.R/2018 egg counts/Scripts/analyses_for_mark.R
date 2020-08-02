@@ -553,6 +553,37 @@ anova(mcap)
 
 # 8/2/20 rerunning models with avg_den_24h and avg_den_seen_max ####
 
+#quick model to see if there were differences in avg_den_24hr
+
+boxplot(avg_den_24h~Treatment, repro) # doesn't seem like it, which is interesting when
+# we consider using it as a covariate. Might be an argument to remove it as a covariate?
+
+re<-lm(avg_den_24h~Treatment*Year*Density*(Trial %in% Year), repro)
+hist(resid(re))
+qqnorm(resid(re))
+anova(re)
+
+me1<-update(re, .~. -(Treatment:Year:Density:Trial))
+summary(me1)
+anova(me1)
+
+me2<-update(me1, .~. -(Year:Density:Trial))
+anova(me2)
+
+me3<-update(me2, .~. -(Treatment:Year:Trial))
+anova(me3)
+
+me4<-update(me3, .~. -(Treatment:Year:Density))
+anova(me4)
+
+me5<-update(me4, .~. -(Treatment:avg_den_max_seen))
+anova(me5)
+
+me6<-update(me5, .~. -(Treatment:Year))
+anova(me6)
+
+emmeans(me6, pairwise~Treatment)
+
 me<-lmer(sqrt.egg.week ~ Treatment*Year*avg_den_24h + (1|Trial) + (1|Treatment:Trial) +
            (1|Trial:avg_den_24h)+(1|avg_den_24h:Treatment:Trial), REML=F, repro)
 hist(resid(me))
