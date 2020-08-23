@@ -2,9 +2,15 @@
 # Description: R script for reproduction for Jarvis and Steele
 # Author: George C. Jarvis
 # Date: Mon Aug 10 17:17:13 2020
-# Notes: 
+# Notes: what I did for egg counts (original counts): I used lmer + log likelihoods to do model selection
+# then I analyzed the final model with nlme (made the most sense for df for output); so the tables in the
+# paper reflect the analyses and packages that they were done with. Will likely just say that I used nlme 
+# in the paper
+# I'll do the same for the analyses for biomass analyses as well
 # --------------------------------------
 
+library(car)
+library(tidyverse)
 library(lme4)
 library(nlme)
 library(lmerTest)
@@ -16,6 +22,10 @@ library(emmeans) #for generating least-squares adjusted means from models (will 
 
 #importing dataset####
 repro<-read.csv("Data/8_10_20_big_dataset_repro.csv") #includes biomass, densities, and egg counts
+head(repro)
+
+#data for t6 t-test
+t6_t_test<-read.csv("Data/t6_t_test_eggs.csv")
 
 #data manipulation####
 
@@ -42,8 +52,19 @@ repro.t6<-repro.t6[repro.t6$T6_comparison == "High" | repro.t6$T6_comparison == 
 #Data from Trial 6 only
 #write.csv(repro.t6,"Data\\Cage_effects_egg_counts_after_data_wrangling.2020.4.7.csv", row.names = FALSE)
 
+#datasets for biomass analyses: 
+#all trials, removing T-6 comparison column and then removing NA's
+biomass<-select(repro, -T6_comparison)
+View(biomass)
+biomass_all_cc<-drop_na(biomass)
+
+#same but for t6 only:
+biomass_t6_cc<-drop_na(repro.t6) #looks like I recollected fems from all reefs
 
 #analyses####
+
+#[Egg counts]
+
 # analyzing mixed models with log-likelihood estimates and chi-square tests.
 # start with full model, then reduce model first by non-significant random effects, then by NS. fixed effects
 # want to definitely leave in Trial term as random effect, and Treatement, Year, T x Y, and avg.inhab as fixed effects.
@@ -197,36 +218,49 @@ anova(me12)
 anova(me10,me12)
 
 #using nlme, seems to make more sense with the year factor?#####
-mod_final<-lme(egg.week~Treatment*Year+avg.inhab, random = ~1 + Year|Trial, data = repro)
+#snytax for nlme makes it hard to specify multiple random effects
+#trying one different model just in case, but doesn't seem to fit my needs
+
+#template (https://stats.stackexchange.com/questions/58669/specifying-multiple-separate-random-effects-in-lme):
+#fit <- lme(Y ~ time, random=list(year=~1, date=~time), data=X, weights=varIdent(form=~1|year))
+
+#fit <- lme(egg.week~Treatment*Year*avg.inhab, 
+#           random=list(Trial=~1, Treatment=~Trial, data=repro, weights=varIdent(form=~1|Trial)))
+#full model:
+mod_full_lme<-lme(egg.week~Treatment*Year*avg.inhab, random = ~1|Trial, data = repro)
+anova(mod_full_lme)
+summary(mod_full_lme)
+ranef(mod_full_lme)
+
+#reduced model:
+mod_final<-lme(egg.week~Treatment*Year+avg.inhab, random = ~1|Trial, data = repro)
 anova(mod_final)
 summary(mod_final)
 ranef(mod_final)
 
-# 1b. Trial 6 data only, comparing high-risk caged to uncaged treatments in Trial 6 with ANCOVA####
-#note: Year is not needed anymore, and Trial is removed as well
-
-me13<-lm(egg.week~T6.comparison*avg.inhab,data=repro.t6)
-hist(resid(me13)) # not so great, but might look better after data transformation
-qqnorm(resid(me13))
-qqline(resid(me13))
-
-anova(me13)
-
-# removing non-significant interaction of covariate
-
-me14<-lm(egg.week~T6.comparison+avg.inhab,data=repro.t6)
-hist(resid(me14)) #not a super great fit, but I think it's okay
-qqnorm(resid(me14))
-qqline(resid(me14))
-
-anova(me13,me14) # no difference in model after interaction was removed
-
-# LS-means for treatment from model:
-emmeans(me14, pairwise~T6.comparison)
-boxplot(egg.week~T6.comparison,data=repro.t6)# variances don't look too bad
-
 # 1c. same analysis with log-likelihood estimates, but with sqrt.eggs as response####
-## all I have to do is change the orignial model
+
+#nlme:
+#full model:
+smod_full_lme<-lme(sqrt.egg.week~Treatment*Year*avg.inhab, random = ~1|Trial, data = repro)
+anova(smod_full_lme)
+summary(smod_full_lme)
+ranef(smod_full_lme)
+rand(me)
+
+#reduced model:
+smod_final<-lme(sqrt.egg.week~Treatment*Year+avg.inhab, random = ~1|Trial, data = repro)
+anova(smod_final)
+summary(smod_final)
+ranef(smod_final)
+
+#trying a different model, uncorrelated random intercept and random intercept within group
+smod_full_lme<-lme(sqrt.egg.week~Treatment*Year*avg.inhab, random = ~Treatment|Trial, data = repro)
+anova(smod_full_lme)
+summary(smod_full_lme)
+ranef(smod_full_lme)
+
+## all I have to do is change the original model
 mes<-lmer(sqrt.egg.week ~ Treatment*Year*avg.inhab + (1|Trial) + (1|Treatment:Trial) +
             (1|Trial:avg.inhab)+(1|avg.inhab:Treatment:Trial), REML=F, repro)
 hist(resid(mes))
@@ -237,6 +271,17 @@ summary(mes)
 anova(mes)
 
 rand(mes)# trial is the only random effect that seems to exaplain any of the variance
+
+#reduced model:
+mes_red<-lmer(sqrt.egg.week ~ Treatment*Year+avg.inhab + (1|Trial), REML=F, repro)
+hist(resid(mes_red))
+qqnorm(resid(mes_red))
+qqline(resid(mes_red))
+plot(mes_red)
+summary(mes_red)
+anova(mes_red)
+
+rand(mes_red)
 
 #note: this is only the case with sqrt-transformed data
 
@@ -352,10 +397,61 @@ anova(mes12)
 
 anova(mes10,mes12) #chisq = 0.002    df = 2         p = 0.41
 
+# 8-22-2020: sqrt-data with nlme model####
+
+#trial as fixed facor
+tf<-aov(sqrt.egg.week~Treatment*Year*avg.inhab*Trial, data=repro)
+hist(resid(tf))
+plot(tf)
+anova(tf)
+summary(tf)
+
+me1<-update(tf, .~. -(Treatment:avg.inhab:Trial))
+summary(me1)
+anova(me1)
+
+me2<-update(me1, .~. -(Treatment:Year:avg.inhab:Trial))
+anova(me2)
+
+me3<-update(me2, .~. -(Treatment:Year:avg.inhab))
+anova(me3)
+
+me4<-update(me3, .~. -(avg.inhab:Trial))
+anova(me4)
+
+me5<-update(me4, .~. -(Year:avg.inhab:Trial))
+anova(me5)
+
+me6<-update(me5, .~. -(Treatment:Trial))
+anova(me6)
+
+me7<-update(me6, .~. -(Treatment:Year:Trial))
+anova(me7)
+
+me8<-update(me7, .~. -(Year:avg.inhab))
+anova(me8)
+
+me9<-update(me8, .~. -(Treatment:avg.inhab))
+anova(me9)
+
+boxplot(sqrt.egg.week~Trial, data=repro)
+
+me6<-update(me5, .~. -(Treatment:Year))
+anova(me6)
+
+
+#using nlme, seems to make more sense with the year factor?#####
+sqmod_final<-lme(sqrt.egg.week~Treatment*Year+avg.inhab, random = ~1 + Year|Trial, data = repro)
+anova(sqmod_final)
+summary(sqmod_final)
+ranef(sqmod_final)
+
 # 1d. Trial 6 data only, comparing square root data for high-risk caged to uncaged treatments in Trial 6 with ANCOVA####
 #note: Year is not needed anymore, and Trial is removed as well
 
-mes13<-lm(sqrt.egg.week~T6.comparison*avg.inhab,data=repro.t6)
+View(repro.t6)
+
+mes13<-lm(sqrt.egg.week~T6_comparison*avg.inhab,data=repro.t6)
 hist(resid(mes13)) # not so great, but might look better after data transformation
 qqnorm(resid(mes13))
 qqline(resid(mes13))
@@ -364,7 +460,7 @@ anova(mes13)
 
 # removing non-significant interaction of covariate
 
-mes14<-lm(sqrt.egg.week~T6.comparison+avg.inhab,data=repro.t6)
+mes14<-lm(sqrt.egg.week~T6_comparison+avg.inhab,data=repro.t6)
 hist(resid(mes14)) #not a super great fit, but I think it's okay
 qqnorm(resid(mes14))
 qqline(resid(mes14))
@@ -372,6 +468,50 @@ qqline(resid(mes14))
 anova(mes13,mes14) # no difference in model after interaction was removed
 
 anova(mes14)
+
+#removing covariate
+mes15<-lm(sqrt.egg.week~T6_comparison,data=repro.t6)
+hist(resid(mes15)) #not a super great fit, but I think it's okay
+qqnorm(resid(mes15))
+qqline(resid(mes15))
+
+anova(mes15)
+
+#t test for trial 6
+t.test(t6_t_test$sqrt_high_cage ,t6_t_test$sqrt_high_uncaged)
+
+#getting means and se for trial 6 only
+
+#generic code using df
+t6_means<-with(repro.t6, aggregate((sqrt.egg.week), list(T6_comparison=T6_comparison), mean))
+t6_means
+#now apply the se function to the 4th column [,3]
+t6_means$se<-with(repro.t6, aggregate((sqrt.egg.week), list(T6_comparison=T6_comparison), function(x) sd(x)/sqrt(length(x))))[,2]
+t6_means
+
+#not sure how to back-transform standard error, but can back-transform the means to report in the paper
+t6_means$btm<-(t6_means$x)^2
+t6_means
+
+boxplot(egg.week~T6_comparison,data = repro.t6)
+
+(-0.56836)^2
+
+?qf
+
+
+
+
+#bimodal dist, tried a tranformation, but I don't think this is legit, and I don't have a good justification for doing it
+transformed <- abs(repro.t6$sqrt.egg.week - mean(repro.t6$sqrt.egg.week))
+mes15<-lm(transformed~T6_comparison,data=repro.t6)
+hist(resid(mes15)) #dist does look better though
+qqnorm(resid(mes15))
+qqline(resid(mes15))
+anova(mes15)
+
+anova(mes15,mes14)
+
 
 # LS-means for treatment from model:
 emmeans(mes14, pairwise~T6.comparison)
@@ -794,7 +934,7 @@ anova(me10,me12)
 # 1b. Trial 6 data only, comparing high-risk caged to uncaged treatments in Trial 6 with ANCOVA####
 #note: Year is not needed anymore, and Trial is removed as well
 
-me13<-lm(egg.week~T6.comparison*avg.inhab,data=repro.t6)
+me13<-lm(egg.week~T6_comparison*avg.inhab,data=repro.t6)
 hist(resid(me13)) # not so great, but might look better after data transformation
 qqnorm(resid(me13))
 qqline(resid(me13))
@@ -966,6 +1106,54 @@ anova(mes14)
 emmeans(mes14, pairwise~T6.comparison)
 boxplot(sqrt.egg.week~T6.comparison,data=repro.t6)# variances don't look too bad
 
+# [reproduction in response to changes in biomass] ####
+# no statistical difference in the biomass of fish recollected among treatments
+
+#1. tests for differences in biomass among treatments:
+#already did the lon-likelihood tests on my Monash computer, so I know what the final model should be
+# - will just use the same procedure as I did for egg counts, and use the ran(biomass_full)
+head(repro)
+
+#full modelfor log-likelihood tests:
+biomass_full<-lmer(per_capita_female_biomass~Treatment*Year*recollection_female + (1|Trial)+
+                   (1|Treatment:Trial) +(1|Trial:recollection_female)+
+                   (1|recollection_female:Treatment:Trial),
+                   REML=F, biomass_all_cc)
+hist(resid(biomass_full))
+rand(biomass_full)
+anova(biomass_full)
+
+boxplot(per_capita_female_biomass~Treatment*Trial,data = repro)
+boxplot(recollection_female~Treatment*Trial,data = repro)
+
+#reduced model lmer
+biomass_red_lmer<-lmer(per_capita_female_biomass~Treatment*Year*recollection_female 
+                       +(1|Trial:recollection_female)+ (1|Trial),
+                   REML=F, biomass_all_cc)
+anova(biomass_red_lmer)
+summary(biomass_red_lmer)
+
+#full model with nlme for supplementary table
+#had to make a single variable for trial*number female recollected ("tnf", see below model)
+biomass_full_nlme<-lme(per_capita_female_biomass~Treatment*Year*recollection_female, 
+                random= ~1,biomass_all_cc, varIdent(form=~1|Trial))
+hist(resid(biomass_full_nlme))
+anova(biomass_full_nlme)
+summary(biomass_full_nlme)
+
+biomass_all_cc$tn<-as.numeric(biomass_all_cc$Trial)
+biomass_all_cc$trf<-(biomass_all_cc$tn*biomass_all_cc$recollection_female)
+
+boxplot(per_capita_female_biomass~Treatment, data=biomass_all_cc)
+
+
+#reduced model
+biomass_red_nlme<-lme(per_capita_female_biomass~Treatment*Year+recollection_female,
+                   random = ~1|trf,biomass_all_cc)
+hist(resid(biomass_red_nlme))
+anova(biomass_red_nlme)
+
+
 #plotting ANCOVA figure for RAW data; this is what I present in the manuscript####
 
 #Order the treatments: Low --> Med --> High
@@ -1128,3 +1316,49 @@ plot(mcap)
 summary(mcap)
 anova(mcap)
 
+# 8.23.20 power analysis #####
+
+#importing dataset where med and high-risk treatments have been combined (risk) vs. low-risk treatment
+# "no_risk"
+
+pa<-read.csv("Data/8_10_23_power_analysis.csv") #includes biomass, densities, and egg counts
+head(pa)
+
+pa$avg.inhab<-(ceiling((repro$recollection_male_and_female+20)/2))
+
+pa$sqrt.egg.week<-sqrt(pa$egg.week)
+
+# model with replicates at reef level, accounting for effect of covariate, but nothing else
+
+mod_reef<-lm(sqrt.egg.week~Treatment_power*avg.inhab, data = pa)
+hist(resid(mod_reef))
+anova(mod_reef)
+
+#dropping interaction with covariate
+mod_reef1<-lm(sqrt.egg.week~Treatment_power+avg.inhab, data = pa)
+hist(resid(mod_reef1))
+anova(mod_reef1)
+
+emmeans(mod_reef1, pairwise~Treatment_power) #plugged these into the calculation for power 
+
+# model with replicates at trial level, i.e. grouped by trial
+
+data_trials<-with(pa, aggregate((sqrt.egg.week), list(Treatment_power=Treatment_power, Trial=Trial), mean))
+data_trials
+
+#exporting this table
+write.csv(data_trials,"Data\\power_by_trial.csv", row.names = FALSE)
+
+data_trials1<-read.csv("Data/power_by_trial_density_added.csv") #includes average number of fish recollected
+data_trials1$avg.inhab<-(ceiling((data_trials1$recollection+20)/2))
+head(data_trials1)
+
+mod_trial<-lm(egg.week~Treatment_power+avg.inhab, data = data_trials1)
+hist(resid(mod_trial))
+anova(mod_trial)
+
+emmeans(mod_trial, pairwise~Treatment_power) #plugged these into the calculation for power
+
+
+emmeans(mes8, pairwise~Treatment) #warning message re: interactions, but I think it's okay
+boxplot(sqrt.egg.week~Treatment,data=repro)
