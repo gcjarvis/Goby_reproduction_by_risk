@@ -55,7 +55,7 @@ repro.t6<-repro.t6[repro.t6$T6_comparison == "High" | repro.t6$T6_comparison == 
 #datasets for biomass analyses: 
 #all trials, removing T-6 comparison column and then removing NA's
 biomass<-select(repro, -T6_comparison)
-View(biomass)
+#View(biomass)
 biomass_all_cc<-drop_na(biomass)
 
 #same but for t6 only:
@@ -253,6 +253,10 @@ smod_final<-lme(sqrt.egg.week~Treatment*Year+avg.inhab, random = ~1|Trial, data 
 anova(smod_final)
 summary(smod_final)
 ranef(smod_final)
+
+#tried extracting MS residuals directly from the model, but I don't think this is what I want
+r.rmse <- sqrt(mean(residuals(smod_final)^2))
+r.rmse
 
 #trying a different model, uncorrelated random intercept and random intercept within group
 smod_full_lme<-lme(sqrt.egg.week~Treatment*Year*avg.inhab, random = ~Treatment|Trial, data = repro)
@@ -642,14 +646,36 @@ anova(mcap2)
 # 3) 
 
 #trial as random
-mcap3<-lmer(reproduction_per_capita_female_biomass_per_day_per_gram ~ Treatment*Year+recollection_female+
-              Treatment*recollection_female+(1|Trial)+(1|Treatment:Trial)+(1|recollection_female:Trial), REML = F, repro1)
+mcap3<-lmer(sqrt(reproduction_per_capita_female_biomass_per_day_per_gram) ~ Treatment*Year*recollection_female*(1|Trial)
+            +(1|Treatment:Trial)+(1|recollection_female:Trial)+(1|recollection_female:Trial:Treatment), REML = F, repro)
 hist(resid(mcap3))
 qqnorm(resid(mcap3))
 qqline(resid(mcap3))
 plot(mcap3)
 summary(mcap3)
 anova(mcap3)
+
+rand(mcap3)
+
+#dropping all non-significant random effects
+mcap4<-lmer(sqrt(reproduction_per_capita_female_biomass_per_day_per_gram) ~ Treatment*Year*recollection_female*(1|Trial), REML = F, repro)
+hist(resid(mcap4))
+qqnorm(resid(mcap4))
+qqline(resid(mcap4))
+plot(mcap4)
+summary(mcap4)
+anova(mcap4)
+
+#adding covariate, not crossing
+mcap5<-lmer(sqrt(reproduction_per_capita_female_biomass_per_day_per_gram) ~ Treatment*Year+recollection_female*(1|Trial), REML = F, repro)
+hist(resid(mcap5))
+qqnorm(resid(mcap5))
+qqline(resid(mcap5))
+plot(mcap5)
+summary(mcap5)
+anova(mcap5)
+
+boxplot(sqrt(reproduction_per_capita_female_biomass_per_day_per_gram)~Treatment, data = repro)
 
 ### biomass recollected
 
