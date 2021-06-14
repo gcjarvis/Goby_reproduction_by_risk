@@ -13,6 +13,7 @@ library(lmerTest) # version 3.1-0
 library(ggplot2) # version 3.3.3
 library(emmeans) # version 1.6.1
 library(sciplot) # version 1.2-0
+library(pwr) # version 1.3-0
 
 # import dataset #
 repro<-read.csv("Data/8_10_20_big_dataset_repro.csv") #includes biomass, densities, and egg counts
@@ -43,6 +44,13 @@ repro.t6<-repro.t6[repro.t6$T6_comparison == "High" | repro.t6$T6_comparison == 
 # analyses ####
 
 #[Egg counts] ####
+
+# 1) analyses for egg counts, pooled across all trials (mixed models)
+# - plots for egg counts vs. risk, pooled across trials, adjusted for effect of number of gobies inhabiting the reefs
+# - power analysis for egg counts, based on expected 40% difference in reproduction between high- and low-risk environments
+# -- in fishes (Gilliam, 2010; Mukherjee et al., 2014)
+# 2) t-test for cage effects on reproduction in trial 6 only
+
 
 # notes
 
@@ -419,7 +427,7 @@ repro_adjusted_plot <- ggplot(egg.emm.df, aes(x=trt_o, y=mean, fill=trt_o)) +
   geom_linerange(aes(ymin=mean-low_se, ymax=mean+up_se), size=0.5,   
                            position=position_dodge(.85))
 
-# exporting figure for reproduction
+# exporting figure for reproduction ####
 
 pdf("Output/repro_ms_fig_barplot_adjusted_means_for_density.pdf", width = 8, height = 7)
 
@@ -427,7 +435,102 @@ repro_adjusted_plot
 
 dev.off()
 
-# t test for trial 6: does reproductive output differ between high- partially caged vs. high- uncaged reefs?
+# power analysis for egg counts with 'pwr' package ####
+
+# notes:
+
+# based on the model (sqrt.egg.week ~ Treatment + Year + avg.inhab + (Treatment*Year) + (1|Trial), REML = F, repro)
+
+# - pwr.f2.test is correct test for general linear models
+# - using numerator df from model output (Treatment numDF = 2)
+# - manipulating denDF to represent conservative (denDF = 8) and liberal (denDF > 8) estimates based on design
+# -- the most liberal denDF for my treatment factor is 99, which assumes no difference in treatment effects among trials (most liberal assumption)
+
+# rationale for df (with assistance from Steve Dudgeon):
+
+# For your experiment, I came up with 8 df for the error term for Risk as follows:
+#   Since Year is also fixed, the Risk X Year term is fixed, so it is not the error term for Risk, but Risk*Trial(Year) is random, 
+#   and should be the error term for Risk. Correct?
+#   
+#   If so, I calculate for 3 levels for Risk, 3 Trials in each of 2 years a df for this term of
+# 2*(3-1)*2 = 8
+
+# usage: pwr.f2.test(u = NULL, v = NULL, f2 = NULL, sig.level = 0.05, power = NULL)
+
+# arguments:
+
+# u =  degrees of freedom for numerator
+# v =  degrees of freedom for denominator
+# f2 = effect size
+# sig.level = Significance level (Type I error probability)
+# power = Power of test (1 minus Type II error probability)
+
+#NOTE: the parameter that is left as "NULL" is solved for
+
+pwr.f2.test(u = 2, v = 4, f2 = 0.40, sig.level = 0.05, power = NULL) #17% # mainly for figure
+
+pwr.f2.test(u = 2, v = 8, f2 = 0.40, sig.level = 0.05, power = NULL) #32% # what we did, conservatively, based on our model
+
+pwr.f2.test(u = 2, v = 10, f2 = 0.40, sig.level = 0.05, power = NULL) #40%
+
+pwr.f2.test(u = 2, v = 15, f2 = 0.40, sig.level = 0.05, power = NULL) #57%
+
+pwr.f2.test(u = 2, v = 20, f2 = 0.40, sig.level = 0.05, power = NULL) #71% # if we had done 6 trials per year
+
+pwr.f2.test(u = 2, v = 25, f2 = 0.40, sig.level = 0.05, power = NULL) #81% - would have needed ~ 25 replicates to have reasonable power to detect an effect of 40%
+
+# this amounts to 4 more trials per year, over twice the sampling effort we used in our study
+
+pwr.f2.test(u = 2, v = 30, f2 = 0.40, sig.level = 0.05, power = NULL) #88%
+
+pwr.f2.test(u = 2, v = 35, f2 = 0.40, sig.level = 0.05, power = NULL) #93%
+
+pwr.f2.test(u = 2, v = 40, f2 = 0.40, sig.level = 0.05, power = NULL) #96%
+
+# creating dataframe for basic plot of power
+
+num_df <- c(4,8,10,15,20,25,30,35,40)
+pwr <- c(17,32,40,57,71,81,88,93,96)
+
+pwr.df <- data.frame(num_df, pwr)
+
+# plot for power analysis ####
+
+pwr.plot <- ggplot(pwr.df, aes(x=num_df, y=pwr)) + 
+  geom_smooth(se = FALSE, size = 1)+
+  geom_point(size = 1.5)+
+  geom_segment(aes(x = 25, xend=25, y = -Inf, yend=81, linetype = 'Theoretical design (7 trials per year)'), colour = "black", size = 0.8) +
+  geom_segment(aes(x= -Inf, xend=25, y = 81, yend = 81,linetype = 'Theoretical design (7 trials per year)'), colour = "black", size = 0.8) +
+  geom_segment(aes(x = 8, xend=8, y = -Inf, yend=32, linetype = 'Our design (3 trials per year)'), colour = "black", size = 0.8) +
+  geom_segment(aes(x= -Inf, xend=8, y = 32, yend = 32, linetype = 'Our design (3 trials per year)'), colour = "black", size = 0.8) + 
+  scale_color_manual("", values = c("red", "black")) + 
+  theme_classic() + 
+  labs(x="Denominator df", y ="Power") +
+  theme(axis.text.x=element_text(size=20, colour="black"),
+        axis.text.y=element_text(size=20, colour="black"), 
+        axis.title=element_text(size=20))+
+  theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0)), 
+        axis.title.x = element_text(margin = margin(t = 12, r = 0, b = 0, l = 0)), 
+        axis.text.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))) +
+  scale_y_continuous(expand = c(0,0), limits = c(10,110), breaks = c(20,40,60,80,100))+
+  theme(legend.title = element_blank()) + 
+  theme(legend.text = element_text(size = 14)) +
+  theme(
+    legend.position = c(0.55, .95),
+    legend.justification = c("right", "top"),
+    legend.box.just = "right",
+    legend.margin = margin(6, 6, 6, 6)
+  )
+
+# exporting plot  
+  
+pdf("Output/plot_for_power_analysis.pdf", width = 8, height = 7)
+
+pwr.plot
+
+dev.off()
+
+# t test for trial 6: does reproductive output differ between high- partially caged vs. high- uncaged reefs? ####
 
 t.test(t6_t_test$sqrt_high_cage ,t6_t_test$sqrt_high_uncaged)
 
