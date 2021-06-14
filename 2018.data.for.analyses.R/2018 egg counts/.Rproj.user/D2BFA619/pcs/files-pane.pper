@@ -1,13 +1,13 @@
 {
-    "path" : "C:/Users/George/Desktop/2018 summer/2018 Goby/Goby_reproduction_by_risk/2018.data.for.analyses.R/2018 egg counts/Scripts",
-    "sortOrder" : [
+    "path": "C:/Users/George/Desktop/2018 summer/2018 Goby/Goby_reproduction_by_risk/2018.data.for.analyses.R/2018 egg counts/Output",
+    "sortOrder": [
         {
-            "ascending" : false,
-            "columnIndex" : 4
+            "columnIndex": 4,
+            "ascending": false
         },
         {
-            "ascending" : true,
-            "columnIndex" : 2
+            "columnIndex": 2,
+            "ascending": true
         }
     ]
 }
