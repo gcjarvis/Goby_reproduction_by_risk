@@ -18,6 +18,9 @@ library(lme4)
 library(car)
 library(tidyverse)
 library(emmeans) #for generating least-squares adjusted means from models 
+library(ggpubr) # version 0.4.0
+library(extrafont)
+#extrafont::font_import()
 
 #importing data ####
 behave<-read.csv("Data/2019.10.25.behavior.includes.recollections.csv")
@@ -646,6 +649,39 @@ emmeans(fr_fix4, pairwise~Treatment)
 fr_fix4.emm <- emmeans(fr_fix4, ~ Treatment)
 plot(fr_fix4.emm)
 
+# storing as df, I think plots of raw data might be misleading
+
+fr_fix4.emm.pw <- emmeans(fr_fix4, pairwise ~ Treatment) # to be stored as df
+fr_fix4.emm.df <- as.data.frame(fr_fix4.emm.pw$emmeans)
+View(fr_fix4.emm.df)
+
+# as a ggplot (I think the raw data are just fine)
+
+fr<- ggplot(fr_fix4.emm.df, aes(x=Treatment, y=emmean, fill=Treatment)) +
+  geom_bar(stat="identity", colour= "black", width = 0.5, position="dodge")+ 
+  scale_x_discrete(limits=c("Low","Medium","High"))+
+  theme_classic() + 
+  labs(x="Risk treatment",y=(expression(atop("Foraging rate"~(bites~min^-1), 
+                                             paste("(adjusted)")))))+
+  theme(legend.position="none") + 
+  scale_fill_manual(values=c("grey", "grey", "grey")) +
+  theme(axis.text.x=element_text(size=20, colour="black"),
+        axis.text.y=element_text(size=20, colour="black"), 
+        axis.title=element_text(size=20))+
+  theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0)), 
+        axis.title.x = element_text(margin = margin(t = 12, r = 0, b = 0, l = 0)), 
+        axis.text.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))) +
+  theme(legend.text=element_text(size=18)) +
+  theme(legend.title =element_text(size=20))+
+  theme(axis.text.x = element_blank()) +
+  theme(axis.title.x = element_blank()) +
+  theme(axis.ticks.x = element_blank()) + scale_y_continuous(expand = c(0,0),limits = c(0,1.01)) +
+  geom_linerange(aes(ymin=emmean-SE, ymax=emmean+SE), size=0.5,   
+                 position=position_dodge(.85))# + theme(text = element_text(family="Arial"))
+
+
+fr
+
 # 1d. interactins with conspecifics ####
 
 ci<-lmer(courtship.min~Treatment*Year*avg.inhab+(1|Trial) + (1|Treatment:Trial) +
@@ -998,7 +1034,7 @@ exp<-with(behave, aggregate((proportion.exposed), list(Treatment=Treatment), mea
 exp$se<-with(behave, aggregate((proportion.exposed), list(Treatment=Treatment), 
                                function(x) sd(x)/sqrt(length(x))))[,2]
 
-exp.plot<- ggplot(exp, aes(x=Treatment, y=x, fill=Treatment)) +
+e<- ggplot(exp, aes(x=Treatment, y=x, fill=Treatment)) +
   geom_bar(stat="identity", colour= "black", width = 0.5, position="dodge")+ 
   scale_x_discrete(limits=c("Low","Medium","High"))+
   theme_classic() + 
@@ -1013,9 +1049,11 @@ exp.plot<- ggplot(exp, aes(x=Treatment, y=x, fill=Treatment)) +
         axis.text.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))) +
   theme(legend.text=element_text(size=18)) +
   theme(legend.title =element_text(size=20))+
-  theme(axis.ticks.x = element_blank()) + scale_y_continuous(expand = c(0,0),limits = c(0,0.807))
-exp.plot + geom_linerange(aes(ymin=x-se, ymax=x+se), size=0.5,   
-                           position=position_dodge(.85)) + theme(text = element_text(family="Arial"))
+  theme(axis.text.x = element_blank()) +
+  theme(axis.title.x = element_blank()) +
+  theme(axis.ticks.x = element_blank()) + scale_y_continuous(expand = c(0,0),limits = c(0,0.807)) +
+  geom_linerange(aes(ymin=x-se, ymax=x+se), size=0.5,   
+                           position=position_dodge(.85))# + theme(text = element_text(family="Arial"))
 
 # linear distance traveled####
 
@@ -1048,7 +1086,7 @@ exp.plot + geom_linerange(aes(ymin=x-se, ymax=x+se), size=0.5,
 
 dm.1e.emm.df$trt_o<-ordered(dm.1e.emm.df$Treatment,levels=c("Low","Medium","High"))
 
-linear_dist_adjusted_plot <- ggplot(dm.1e.emm.df, aes(x=trt_o, y=emmean, fill=trt_o)) +
+l<- ggplot(dm.1e.emm.df, aes(x=trt_o, y=emmean, fill=trt_o)) +
   geom_bar(stat="identity", colour= "black", width = 0.5, position="dodge")+ 
   scale_x_discrete(limits=c("Low","Medium","High"))+
   theme_classic() + 
@@ -1074,7 +1112,7 @@ fr<-with(behave, aggregate((bites.min), list(Treatment=Treatment), mean))
 fr$se<-with(behave, aggregate((bites.min), list(Treatment=Treatment), 
                               function(x) sd(x)/sqrt(length(x))))[,2]
 
-fr.plot<- ggplot(fr, aes(x=Treatment, y=x, fill=Treatment)) +
+f<- ggplot(fr, aes(x=Treatment, y=x, fill=Treatment)) +
   geom_bar(stat="identity", colour= "black", width = 0.5, position="dodge")+ 
   scale_x_discrete(limits=c("Low","Medium","High"))+
   theme_classic() + 
@@ -1090,15 +1128,21 @@ fr.plot<- ggplot(fr, aes(x=Treatment, y=x, fill=Treatment)) +
         axis.text.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))) +
   theme(legend.text=element_text(size=18)) +
   theme(legend.title =element_text(size=20))+
-  theme(axis.ticks.x = element_blank()) + scale_y_continuous(expand = c(0,0),limits = c(0,1.01))
-fr.plot + geom_linerange(aes(ymin=x-se, ymax=x+se), size=0.5,   
-                           position=position_dodge(.85)) + theme(text = element_text(family="Arial"))
+  theme(axis.text.x = element_blank()) +
+  theme(axis.title.x = element_blank()) +
+  theme(axis.ticks.x = element_blank()) + scale_y_continuous(expand = c(0,0),limits = c(0,1.01)) +
+  geom_linerange(aes(ymin=x-se, ymax=x+se), size=0.5,   
+                           position=position_dodge(.85))# + theme(text = element_text(family="Arial"))
 
 # interactions with conspecifics (displays per minute)####
 
 #movements per minute with rate in parentheses
 
-cr.plot_parenth<- ggplot(cr, aes(x=Treatment, y=x, fill=Treatment)) +
+cr<-with(behave, aggregate((courtship.min), list(Treatment=Treatment), mean))
+cr$se<-with(behave, aggregate((courtship.min), list(Treatment=Treatment), 
+                              function(x) sd(x)/sqrt(length(x))))[,2]
+
+c <- ggplot(cr, aes(x=Treatment, y=x, fill=Treatment)) +
   geom_bar(stat="identity", colour= "black", width = 0.5, position="dodge")+ 
   scale_x_discrete(limits=c("Low","Medium","High"))+
   theme_classic() + 
@@ -1114,10 +1158,11 @@ cr.plot_parenth<- ggplot(cr, aes(x=Treatment, y=x, fill=Treatment)) +
         axis.text.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))) +
   theme(legend.text=element_text(size=18)) +
   theme(legend.title =element_text(size=20))+
-  theme(axis.ticks.x = element_blank()) + scale_y_continuous(expand = c(0,0),limits = c(0,0.151))
-reco.plot + geom_linerange(aes(ymin=x-se, ymax=x+se), size=0.5,   
-                           position=position_dodge(.85)) + theme(text = element_text(family="Arial"))
-
+  theme(axis.text.x = element_blank()) +
+  theme(axis.title.x = element_blank()) +
+  theme(axis.ticks.x = element_blank()) + scale_y_continuous(expand = c(0,0),limits = c(0,0.151))+
+  geom_linerange(aes(ymin=x-se, ymax=x+se), size=0.5,   
+                           position=position_dodge(.85))# + theme(text = element_text(family="Arial"))
 
 # movement rate (movements per minute)####
 
@@ -1125,11 +1170,11 @@ mm<-with(behave, aggregate((movements.min), list(Treatment=Treatment), mean))
 mm$se<-with(behave, aggregate((movements.min), list(Treatment=Treatment), 
                               function(x) sd(x)/sqrt(length(x))))[,2]
 
-mm.plot<- ggplot(mm, aes(x=Treatment, y=x, fill=Treatment)) +
+m <- ggplot(mm, aes(x=Treatment, y=x, fill=Treatment)) +
   geom_bar(stat="identity", colour= "black", width = 0.5, position="dodge")+ 
   scale_x_discrete(limits=c("Low","Medium","High"))+
   theme_classic() +
-  labs(x="Risk treatment",y=(expression(Reproduction~reef^{" -1"})))+
+  labs(x="Risk treatment",y=(expression(Movements~min^{" -1"}))) +
   theme(legend.position="none") + 
   scale_fill_manual(values=c("grey", "grey", "grey")) +
   theme(axis.text.x=element_text(size=20, colour="black"),
@@ -1141,6 +1186,75 @@ mm.plot<- ggplot(mm, aes(x=Treatment, y=x, fill=Treatment)) +
   theme(legend.text=element_text(size=18)) +
   theme(legend.title =element_text(size=20))+
   theme(axis.ticks.x = element_blank()) + scale_y_continuous(expand = c(0,0),limits = c(0,1.51),
-                                                             labels = scales::number_format(accuracy = 0.01)) #changed to 2 decimal places for movement rate)
-mm.plot + geom_linerange(aes(ymin=x-se, ymax=x+se), size=0.5,   
-                           position=position_dodge(.85)) + theme(text = element_text(family="Arial"))
+                                                             labels = scales::number_format(accuracy = 0.01))+ #changed to 2 decimal places for movement rate)
+ geom_linerange(aes(ymin=x-se, ymax=x+se), size=0.5,   
+                           position=position_dodge(.85))# + theme(text = element_text(family="Arial"))
+
+m
+
+# survivorship (plot only, see script for recollections for analyses) #####
+
+# carried over from other script for recollections because I want to include all these plots in a single figure
+
+# plotting (all trials, but not caging effects in trial 6)
+
+# import dataset
+reco<-read.csv("../2018 recollections/Data/2019.10.8.recollection.data.csv")
+
+# data manipulation 
+
+#adding column for survivorship, dividing recollections by 20 (initial number of fish on reefs)
+reco$Survivorship<-reco$Count/20
+
+# plot
+
+survival<-with(reco, aggregate((Survivorship), list(Treatment=Treatment), mean))
+survival$se<-with(reco, aggregate((Survivorship), list(Treatment=Treatment), function(x) sd(x)/sqrt(length(x))))[,2]
+
+r <- ggplot(survival, aes(x=Treatment, y=x, fill=Treatment)) +
+  geom_bar(stat="identity", colour= "black", width = 0.5, position="dodge")+ 
+  scale_x_discrete(limits=c("Low","Medium","High"))+
+  theme_classic() + 
+  labs(x="Risk treatment", y="Survivorship") +
+  theme(legend.position="none") + 
+  scale_fill_manual(values=c("grey", "grey", "grey")) +
+  theme(axis.text.x=element_text(size=20, colour="black"),
+        axis.text.y=element_text(size=20, colour="black"), 
+        axis.title=element_text(size=20))+
+  theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0)), 
+        axis.title.x = element_text(margin = margin(t = 12, r = 0, b = 0, l = 0)), 
+        axis.text.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))) +
+  theme(legend.text=element_text(size=18)) +
+  theme(legend.title =element_text(size=20))+
+  theme(axis.text.x = element_blank()) +
+  theme(axis.title.x = element_blank()) +
+  theme(axis.ticks.x = element_blank()) + scale_y_continuous(expand = c(0,0),limits = c(0,0.31),
+                                                             labels = scales::number_format(accuracy = 0.01)) +
+  geom_linerange(aes(ymin=x-se, ymax=x+se), size=0.5,   
+                           position=position_dodge(.85))# + theme(text = element_text(family="Arial"))
+
+# arranging all plots together in a single figure #####
+
+# referencing the names of the plots to be displayed on the panels
+
+# f, r, m, c, l, e
+
+# panels occur in this order:
+
+# 1 2
+# 3 4
+# 5 6
+
+# I've already removed x-axis labels
+
+fr <- ggarrange(r, f, e, c, l, m, # adding null plot in the middle allows you to specify spacing between panels
+                #labels = c("A)", "D)", "B)", "E)", "C)", "F)"),
+                ncol = 2, nrow = 3, # widths = c(1.5, -0.09, 1.5), # changes the width of figures
+                align = c("hv"),
+                font.label = list(size = 16),
+                hjust = -8, vjust = 0.3) # aligns labels vertically and horizontally
+
+
+png("Output/figure_test_HD.png", width = 12, height = 13, units = 'in', res = 1000)
+fr
+dev.off()
