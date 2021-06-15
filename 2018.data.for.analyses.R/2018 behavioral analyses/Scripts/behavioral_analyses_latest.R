@@ -1223,11 +1223,11 @@ r <- ggplot(survival, aes(x=Treatment, y=x, fill=Treatment)) +
   geom_linerange(aes(ymin=x-se, ymax=x+se), size=0.5,   
                            position=position_dodge(.85))# + theme(text = element_text(family="Arial"))
 
-# arranging all plots together in a single figure #####
+# arranging all plots together in a single figure with 'ggpubr' package #####
 
 # referencing the names of the plots to be displayed on the panels
 
-# f, r, m, c, l, e
+# r, f, e, c, l, m
 
 # panels occur in this order:
 
@@ -1237,12 +1237,11 @@ r <- ggplot(survival, aes(x=Treatment, y=x, fill=Treatment)) +
 
 # I've already removed x-axis labels
 
-fr <- ggarrange(r, f, e, c, l, m, # adding null plot in the middle allows you to specify spacing between panels
-                #labels = c("A)", "D)", "B)", "E)", "C)", "F)"),
-                ncol = 2, nrow = 3, # widths = c(1.5, -0.09, 1.5), # changes the width of figures
+fr <- ggarrange(r, f, e, c, l, m, 
+                ncol = 2, nrow = 3, 
                 align = c("hv"),
                 font.label = list(size = 16),
-                hjust = -8, vjust = 0.3) # aligns labels vertically and horizontally
+                hjust = -8, vjust = 0.3) 
 
 
 png("Output/figure_test_HD.png", width = 12, height = 13, units = 'in', res = 1000)
