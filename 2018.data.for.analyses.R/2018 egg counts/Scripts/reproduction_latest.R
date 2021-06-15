@@ -243,9 +243,9 @@ Anova(mes5, type = "III")
 # Analysis of Deviance Table (Type III Wald chisquare tests)
 # 
 # Response: sqrt.egg.week
-# Chisq Df Pr(>Chisq)    
+#               Chisq Df Pr(>Chisq)    
 # (Intercept)  6.8622  1   0.008804 ** 
-#   Treatment    2.2600  2   0.323034    
+# Treatment    2.2600  2   0.323034    
 # Year         1.1866  1   0.276018    
 # avg.inhab   36.9198  1  1.231e-09 ***
 #   ---
@@ -353,8 +353,6 @@ emmeans(mes6, pairwise~Treatment)# seems like this is the best one to go with (g
 
 mes6.emm <- emmeans(mes6, ~ Treatment)
 plot(mes6.emm)
-plot(warp.emm, by = NULL, comparisons = TRUE, adjust = "mvt", 
-     horizontal = FALSE, colors = "darkgreen")
 
 # based on LS- means: low > high > med
 
