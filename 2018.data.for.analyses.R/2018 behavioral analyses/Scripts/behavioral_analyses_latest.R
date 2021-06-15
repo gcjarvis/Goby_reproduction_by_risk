@@ -1,26 +1,16 @@
-# Description: Script for behavioral analyses from Jarvis and Steele 
+# Description: Script for behavioral analyses and corresponding plots from Jarvis and Steele 
 # Author: George C Jarvis
 # Date: Tue Jun 15 17:03:24 2021
 # Notes: No behavioral observations for Trial 6, so no comparisons of behaviors between high-risk caged and uncaged treatments
 # --------------
 
-# Description: Script for behavioral analyses from Jarvis and Steele 
-# Author: George C Jarvis
-# Date: Sat Apr 11 17:25:38 2020
-# Notes: No behavioral observations for Trial 6, so no comparisons of behaviors between high-risk
-## caged and uncaged treatments
-# --------------
-
 # load packages
 
-library(lme4)
-# library(lmerTest) # I think I should go with analysis of deviance for mixed model ANCOVA's
-library(car)
-library(tidyverse)
-library(emmeans) #for generating least-squares adjusted means from models 
+library(car) # version 3.0-1.0
+library(tidyverse) # version 1.3.1
+library(lme4) # version 1.1-2.1
+library(emmeans) # version 1.6.1
 library(ggpubr) # version 0.4.0
-library(extrafont)
-#extrafont::font_import()
 
 #importing data ####
 behave<-read.csv("Data/2019.10.25.behavior.includes.recollections.csv")
