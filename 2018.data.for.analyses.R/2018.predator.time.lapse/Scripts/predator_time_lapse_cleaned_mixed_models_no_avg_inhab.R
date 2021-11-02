@@ -247,134 +247,7 @@ anova(pre7)
 
 #anova(pre7,pre6)
 
-#now want to take out non-significant interactions with covariate (avg.inhab)
-
-# this includes NS effect of avg.inhab, not what I want (see below for final model) ####
-
-pre8<-lm(Present ~ Treatment*Year + avg.inhab, t1.5.w)
-hist(resid(pre8))
-qqnorm(resid(pre8))  
-qqline(resid(pre8))
-#summary(pre8)
-anova(pre8)
-
-# > anova(pre8)
-# Analysis of Variance Table
-# 
-# Response: Present
-# Df Sum Sq  Mean Sq F value Pr(>F)
-# Treatment       2 0.2469 0.123442  1.7897 0.1766
-# Year            1 0.0996 0.099582  1.4437 0.2347
-# avg.inhab       1 0.1309 0.130943  1.8984 0.1738
-# Treatment:Year  2 0.0352 0.017578  0.2549 0.7759
-# Residuals      55 3.7936 0.068975 
-
-#anova(pre7,pre8)
-
-emmeans(pre8, pairwise~Treatment) #warning message re: interactions, but I think it's okay
-
-# > emmeans(pre8, pairwise~Treatment) #warning message re: interactions, but I think it's okay
-# NOTE: Results may be misleading due to involvement in interactions
-# $emmeans
-# Treatment emmean     SE df lower.CL upper.CL
-# High       0.536 0.0634 55    0.409    0.663
-# Low        0.377 0.0634 55    0.250    0.504
-# Medium     0.515 0.0713 55    0.372    0.658
-# 
-# Results are averaged over the levels of: Year 
-# Confidence level used: 0.95 
-# 
-# $contrasts
-# contrast      estimate     SE df t.ratio p.value
-# High - Low      0.1587 0.0897 55  1.769  0.1894 
-# High - Medium   0.0208 0.0954 55  0.219  0.9740 
-# Low - Medium   -0.1379 0.0954 55 -1.445  0.3253 
-# 
-# Results are averaged over the levels of: Year 
-# P value adjustment: tukey method for comparing a family of 3 estimates 
-
-boxplot(Present~Treatment,data=t1.5.w) # variances don't look too bad, and medians look pretty good to me (i.e. match up with LS-means for the most part)
-
-# removing treatment*year effect just to see if it affects the qualitative results
-
-pre9<-lm(Present ~ Treatment + Year + avg.inhab, t1.5.w)
-
-anova(pre9) # doesn't change result, but going to leave interaction in for now (was interested in whether treatment effects differed between years)
-
-# > anova(pre9)
-# Analysis of Variance Table
-# 
-# Response: Present
-# Df Sum Sq  Mean Sq F value Pr(>F)
-# Treatment  2 0.2469 0.123442  1.8377 0.1685
-# Year       1 0.0996 0.099582  1.4825 0.2284
-# avg.inhab  1 0.1309 0.130943  1.9494 0.1681
-# Residuals 57 3.8288 0.067171  
-
-# want to see how emmeans compares when we remove treatment*year interaction
-
-emmeans(pre9, pairwise~Treatment) # Med > High now, but only slightly (i.e. doesn't change patterns if you include/exclude trt * year effect)
-# I'm going to go with "pre8" as the final model for predator presence
-
-# > emmeans(pre9, pairwise~Treatment) #warning message re: interactions, but I think it's okay
-# $emmeans
-# Treatment emmean     SE df lower.CL upper.CL
-# High       0.521 0.0590 57    0.403    0.639
-# Low        0.384 0.0588 57    0.267    0.502
-# Medium     0.530 0.0619 57    0.406    0.654
-# 
-# Results are averaged over the levels of: Year 
-# Confidence level used: 0.95 
-# 
-# $contrasts
-# contrast      estimate     SE df t.ratio p.value
-# High - Low     0.13642 0.0801 57  1.704  0.2125 
-# High - Medium -0.00885 0.0813 57 -0.109  0.9935 
-# Low - Medium  -0.14527 0.0816 57 -1.780  0.1853 
-# 
-# Results are averaged over the levels of: Year 
-# P value adjustment: tukey method for comparing a family of 3 estimates
-
-# generating table with extracted emmeans +/-se for predator presence, based on "pre8" model
-
-pre8.emm <- emmeans(pre8, ~ Treatment)
-
-pred.pres.df <- as.data.frame(pre8.emm)
-
-# > pred.pres.df
-#   Treatment    emmean         SE df  lower.CL  upper.CL
-# 1      High 0.5359600 0.06343132 55 0.4088408 0.6630792
-# 2       Low 0.3772535 0.06343132 55 0.2501343 0.5043727
-# 3    Medium 0.5151102 0.07128529 55 0.3722513 0.6579691
-
-# can plot with this now, just have to do mean +/- se
-
-pred.pres.df$trt_o<-ordered(pred.pres.df$Treatment,levels=c("Low","Medium","High"))
-
-ptl_pres_adjusted_plot <- ggplot(pred.pres.df, aes(x=trt_o, y=emmean, fill=trt_o)) +
-  geom_bar(stat="identity", colour= "black", width = 0.5, position="dodge")+ 
-  scale_x_discrete(limits=c("Low","Medium","High"))+
-  theme_classic() + 
-  labs(x="Risk treatment", y = "Proportion of photos with predators present 
-       (adjusted)") +
-  theme(legend.position="none") + 
-  scale_fill_manual(values=c("grey", "grey", "grey")) +
-  theme(axis.text.x=element_text(size=20, colour="black"),
-        axis.text.y=element_text(size=20, colour="black"), 
-        axis.title=element_text(size=20))+
-  theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0)), 
-        axis.title.x = element_text(margin = margin(t = 12, r = 0, b = 0, l = 0)), 
-        axis.text.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))) +
-  theme(legend.text=element_text(size=18)) +
-  theme(legend.title =element_text(size=20))+
-  theme(axis.ticks.x = element_blank()) +
-  scale_y_continuous(expand = c(0,0)) +
-  geom_linerange(aes(ymin=emmean-SE, ymax=emmean+SE), size=0.5,   
-                 position=position_dodge(.85))
-
-ptl_pres_adjusted_plot
-
-# needed to remove avg.inhab from the model...
+#now want to take out non-significant effects of covariate (avg.inhab)
 
 # (MS) final model for PTL - presence of predators, after removing NS effect of avg.inhab ####
 
@@ -557,70 +430,7 @@ anova(st7)
 
 anova(st7,st6)
 
-# now want to take out non-significant interactions with covariate (avg.inhab)
-
-# proportion of photos with sublethal predators...but includes avg.inhab as an effect, need to remove and rerun for plot ####
-
-st8<-lm(Sublethal.Threat ~ Treatment*Year + avg.inhab, ptl.sub)
-hist(resid(st8))
-qqnorm(resid(st8))  
-qqline(resid(st8))
-summary(st8)
-anova(st8)
-
-# > anova(st8)
-# Analysis of Variance Table
-# 
-# Response: Sublethal.Threat
-#                 Df  Sum Sq   Mean Sq F value Pr(>F)
-# Treatment       1 0.00020 0.0002045  0.0154 0.9018
-# Year            1 0.00686 0.0068598  0.5179 0.4764
-# avg.inhab       1 0.02268 0.0226782  1.7121 0.1990
-# Treatment:Year  1 0.00007 0.0000718  0.0054 0.9417
-# Residuals      36 0.47685 0.0132458     
-
-#anova(st7,st8)
-
-emmeans(st8, pairwise~Treatment) #warning message re: interactions, but I think it's okay
-boxplot(Sublethal.Threat~Treatment,data=ptl.sub)# variances don't look too bad, and medians look pretty good to me (i.e. match up with LS-means for the most part)
-
-# generating table with extracted emmeans +/-se for predator presence, based on "pre8" model
-
-st8.emm <- emmeans(st8, ~ Treatment)
-
-st8.df <- as.data.frame(st8.emm)
-
-# > st8.df
-#   Treatment    emmean         SE df   lower.CL  upper.CL
-# 1      High 0.1335520 0.02781808 36 0.07713430 0.1899697
-# 2    Medium 0.1307943 0.03143090 36 0.06704953 0.1945392
-
-# can plot with this now, just have to do mean +/- se
-
-st8.df$trt_o<-ordered(st8.df$Treatment,levels=c("Low","Medium","High"))
-
-ptl_sub_adjusted_plot <- ggplot(st8.df, aes(x=trt_o, y=emmean, fill=trt_o)) +
-  geom_bar(stat="identity", colour= "black", width = 0.5, position="dodge")+ 
-  scale_x_discrete(limits=c("Low","Medium","High"))+
-  theme_classic() + 
-  labs(x="Risk treatment", y = "Proportion of photos with predators present 
-       (adjusted)") +
-  theme(legend.position="none") + 
-  scale_fill_manual(values=c("grey", "grey", "grey")) +
-  theme(axis.text.x=element_text(size=20, colour="black"),
-        axis.text.y=element_text(size=20, colour="black"), 
-        axis.title=element_text(size=20))+
-  theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0)), 
-        axis.title.x = element_text(margin = margin(t = 12, r = 0, b = 0, l = 0)), 
-        axis.text.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))) +
-  theme(legend.text=element_text(size=18)) +
-  theme(legend.title =element_text(size=20))+
-  theme(axis.ticks.x = element_blank()) +
-  scale_y_continuous(expand = c(0,0)) +
-  geom_linerange(aes(ymin=emmean-SE, ymax=emmean+SE), size=0.5,   
-                 position=position_dodge(.85))
-
-ptl_sub_adjusted_plot
+# now want to take out non-significant effects of covariate (avg.inhab)
 
 # MS- final model for proportion of photos with sublethal predators - removed NS effect of avg.inhab ####
 
@@ -823,17 +633,21 @@ t1.5.plot + geom_linerange(aes(ymin=x-se, ymax=x+se), size=0.5,
 # adding means and se manually to the df, easier because plot is already made
 
 # present
-# > pred.pres.df
-#   Treatment    emmean         SE df  lower.CL  upper.CL
-# 1      High 0.5359600 0.06343132 55 0.4088408 0.6630792
-# 2       Low 0.3772535 0.06343132 55 0.2501343 0.5043727
-# 3    Medium 0.5151102 0.07128529 55 0.3722513 0.6579691
+pred.pres.dfa
+
+# > pred.pres.dfa
+#   Treatment    emmean         SE df  lower.CL  upper.CL  trt_o
+# 1      High 0.5358690 0.06357027 56 0.4085224 0.6632155   High
+# 2       Low 0.3771625 0.06357027 56 0.2498160 0.5045091    Low
+# 3    Medium 0.4905740 0.06795948 56 0.3544348 0.6267132 Medium
 
 # sublethal threat
-# > st8.df
-#   Treatment    emmean         SE df   lower.CL  upper.CL
-# 1      High 0.1335520 0.02781808 36 0.07713430 0.1899697
-# 2    Medium 0.1307943 0.03143090 36 0.06704953 0.1945392
+st8a.df
+
+# > st8a.df
+#   Treatment    emmean         SE df   lower.CL  upper.CL  trt_o
+# 1      High 0.1348351 0.02794780 37 0.07820750 0.1914627   High
+# 2    Medium 0.1186674 0.02987745 37 0.05812997 0.1792049 Medium
 
 # changing values in 'pred.6' df (it's formulated below) 
 
@@ -846,7 +660,7 @@ t1.5.plot + geom_linerange(aes(ymin=x-se, ymax=x+se), size=0.5,
 pred1.5[4, 3] = 0.377
 pred1.5[4, 4] = 0.06
 # med
-pred1.5[5, 3] = 0.515
+pred1.5[5, 3] = 0.491
 pred1.5[5, 4] = 0.07
 # high
 pred1.5[6, 3] = 0.536
@@ -855,17 +669,17 @@ pred1.5[6, 4] = 0.06
 # sublethal
 
 # medium
-pred1.5[8, 3] = 0.131
+pred1.5[8, 3] = 0.117
 pred1.5[8, 4] = 0.03
 # high
-pred1.5[9, 3] = 0.134
+pred1.5[9, 3] = 0.135
 pred1.5[9, 4] = 0.03
 
 # replotting
 
 # for grayscale plot (no legend)
 
-png("Output/PTL_trials_1_5_LS_means.png", width = 9.5, height = 5.5, units = 'in', res = 300)
+png("Output/PTL_trials_1_5_LS_means_no_avg_inhab.png", width = 9.5, height = 5.5, units = 'in', res = 300)
 
 t1.5.plot<- ggplot(pred1.5, aes(x=Treatment, y=x, fill=Predator.class)) +
   geom_bar(stat="identity", colour= "black", width = 0.9, position="dodge", show.legend = FALSE)+ 
